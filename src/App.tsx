@@ -1,26 +1,28 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { NotFound } from './pages/notFound/NotFound';
+import { routers } from './routers/routers';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        {/*<Route element={<PrivateRoute/>}>*/}
+        {/*    {privateRouters.map(({path, Element}) => (*/}
+        {/*        <Route key={path} element={<Element/>} />*/}
+        {/*    ))}*/}
+        {/*</Route>*/}
+        {routers.map(({ path, Element, ...props }) => (
+          <Route key={path} path={path} element={<Element {...props} />} />
+        ))}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
+
+const Loading = () => {
+  return <div>загрузка</div>;
+};
 
 export default App;
