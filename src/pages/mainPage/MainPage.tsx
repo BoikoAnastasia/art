@@ -1,9 +1,7 @@
 // MainPage.tsx
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '../../components/canvas/Canvas';
-import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
-import { ColorPicker } from '../../components/colorPicker/ColorPicker';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { RightSideBar } from '../../components/rightSideBar/RightSideBar';

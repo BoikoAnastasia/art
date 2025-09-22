@@ -8,7 +8,7 @@ type SizeBrushContextType = {
 const SizeBrushContext = createContext<SizeBrushContextType | undefined>(undefined);
 
 export const SizeBrushProvider = ({ children }: { children: any }) => {
-  const [size, setSize] = useState(0);
+  const [size, setSize] = useState(5);
   return <SizeBrushContext.Provider value={{ size, setSize }}>{children}</SizeBrushContext.Provider>;
 };
 

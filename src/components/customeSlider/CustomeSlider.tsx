@@ -6,14 +6,14 @@ import MuiInput from '@mui/material/Input';
 import Slider from '@mui/material/Slider';
 import { styled } from '@mui/material/styles';
 // context
-import { useSize } from '../../contexts/SizeContext';
+// import { useSize } from '../../contexts/SizeContext';
 
 const Input = styled(MuiInput)`
   width: 42px;
 `;
 
-export const CustomeSlider = () => {
-  const { size, setSize } = useSize();
+export const CustomeSlider = ({ title, useValueContext }: { title: string; useValueContext: any }) => {
+  const { size, setSize } = useValueContext();
 
   const handleSliderChange = (event: Event, newValue: number) => {
     setSize(newValue);
@@ -34,7 +34,7 @@ export const CustomeSlider = () => {
   return (
     <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px' }}>
       <Typography id="input-slider" sx={{ color: '#848684', fontSize: '12px' }}>
-        Размер
+        {title}
       </Typography>
       <Slider
         sx={{
@@ -76,12 +76,12 @@ export const CustomeSlider = () => {
           },
         }}
         disableUnderline
-        value={size || 10}
+        value={typeof size === 'number' ? size : 5}
         size="small"
         onChange={handleInputChange}
         onBlur={handleBlur}
         inputProps={{
-          step: 10,
+          step: 1,
           min: 0,
           max: 100,
           type: 'number',

@@ -1,6 +1,8 @@
 import Box from '@mui/material/Box';
 import { ColorPicker } from '../colorPicker/ColorPicker';
 import { CustomeSlider } from '../customeSlider/CustomeSlider';
+import { useSize } from '../../contexts/SizeContext';
+import { useOpacity } from '../../contexts/OpacityContext';
 
 export const RightSideBar = () => {
   return (
@@ -17,7 +19,8 @@ export const RightSideBar = () => {
       }}
     >
       <ColorPicker />
-      <CustomeSlider />
+      <CustomeSlider title="Размер" useValueContext={useSize} />
+      <CustomeSlider title="Прозрачность" useValueContext={useOpacity} />
     </Box>
   );
 };

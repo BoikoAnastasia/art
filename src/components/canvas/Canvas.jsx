@@ -1,16 +1,19 @@
 // Canvas.tsx
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Line, Rect } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import { useColor } from '../../contexts/ColorContext';
 import { useSize } from '../../contexts/SizeContext';
+import { useOpacity } from '../../contexts/OpacityContext';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const [tool, setTool] = useState('pen');
   const [lines, setLines] = useState([]);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
   const { color } = useColor();
   const { size } = useSize();
+  const { size: opacity } = useOpacity();
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -75,13 +78,16 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     isDrawing.current = true;
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
-    setLines([...lines, { tool, size, color, points: [pos.x, pos.y] }]);
+    setLines([...lines, { tool, size, color, opacity: opacity / 100, points: [pos.x, pos.y] }]);
   };
 
   const handleMouseMove = (e) => {
-    if (!isDrawing.current) return;
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
+    if (point) {
+      setHoverPos(point);
+    }
+    if (!isDrawing.current) return;
 
     const updatedLines = [...lines];
     const lastLine = updatedLines[updatedLines.length - 1];
@@ -109,6 +115,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       }}
     >
       <Stage
+        style={{ cursor: 'none' }}
         width={parentWidth}
         height={parentHeight}
         onMouseDown={handleMouseDown}
@@ -125,13 +132,21 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
               key={i}
               points={line.points}
               stroke={line.color}
-              strokeWidth={line.size || 10}
+              strokeWidth={line.size}
               tension={0.5}
+              opacity={line.opacity}
               lineCap="round"
               lineJoin="round"
               globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
             />
           ))}
+          <Circle
+            x={hoverPos.x}
+            y={hoverPos.y}
+            radius={(size || 10) / 2}
+            stroke={tool === 'eraser' ? 'red' : color}
+            strokeWidth={1}
+          />
         </Layer>
       </Stage>
     </div>
