@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
+import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
 
 export const MainPage = () => {
   const [canvasWidth, setCanvasWidth] = useState(800); // Начальная ширина холста
@@ -56,17 +57,7 @@ export const MainPage = () => {
       {/* Основное содержимое */}
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Левое меню */}
-        <Box
-          sx={{
-            width: '50px',
-            background: '#232323',
-            borderRight: '1px solid #4c4c4cff',
-            zIndex: 5,
-          }}
-        >
-          Левое меню
-        </Box>
-
+        <LeftSideBar />
         {/* Центральная область с холстом */}
         <Box
           ref={canvasContainerRef}
