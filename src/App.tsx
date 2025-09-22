@@ -2,11 +2,11 @@ import { Suspense } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { NotFound } from './pages/notFound/NotFound';
 import { routers } from './routers/routers';
-import { ColorProvider } from './ColorContext';
+import { Providers } from './Providers';
 
 function App() {
   return (
-    <ColorProvider>
+    <Providers>
       <Suspense fallback={<Loading />}>
         <Routes>
           {/*<Route element={<PrivateRoute/>}>*/}
@@ -20,7 +20,7 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-    </ColorProvider>
+    </Providers>
   );
 }
 

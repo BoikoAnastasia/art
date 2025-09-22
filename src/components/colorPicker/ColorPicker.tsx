@@ -1,5 +1,5 @@
 import { SketchPicker } from 'react-color';
-import { useColor } from '../../ColorContext';
+import { useColor } from '../../contexts/ColorContext';
 
 export const ColorPicker = () => {
   const { color, setColor } = useColor();

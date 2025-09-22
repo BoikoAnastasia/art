@@ -1,15 +1,16 @@
 // Canvas.tsx
-import { useEffect, useRef, useState, useContext } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Line, Rect } from 'react-konva';
-import { useColor } from '../../ColorContext';
+import { useColor } from '../../contexts/ColorContext';
+import { useSize } from '../../contexts/SizeContext';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const [tool, setTool] = useState('pen');
   const [lines, setLines] = useState([]);
   const isDrawing = useRef(false);
-  const stageRef = useRef(null);
   const containerRef = useRef(null);
   const { color } = useColor();
+  const { size } = useSize();
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -17,6 +18,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   // Обработчик масштабирования с учетом позиции курсора
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const handleZoom = (e, zoomIn) => {
     e.preventDefault();
     e.stopPropagation();
@@ -67,13 +69,13 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     return () => {
       parentContainer.removeEventListener('wheel', handleWheel);
     };
-  }, [scale, position, parentContainerRef]);
+  }, [scale, position, parentContainerRef, handleZoom]);
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
-    setLines([...lines, { tool, color, points: [pos.x, pos.y] }]);
+    setLines([...lines, { tool, size, color, points: [pos.x, pos.y] }]);
   };
 
   const handleMouseMove = (e) => {
@@ -117,13 +119,13 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         onTouchEnd={handleMouseUp}
       >
         <Layer>
-          <Rect x={0} y={0} width={parentWidth} height={parentHeight} fill="#ecececff" />
+          <Rect x={0} y={0} width={parentWidth} height={parentHeight} fill="#ffffffff" />
           {lines.map((line, i) => (
             <Line
               key={i}
               points={line.points}
               stroke={line.color}
-              strokeWidth={5}
+              strokeWidth={line.size || 10}
               tension={0.5}
               lineCap="round"
               lineJoin="round"
