@@ -210,12 +210,11 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
         transformOrigin: '0 0',
         background: '#fff',
-        cursor: tool === 'hand' ? (isDraggingContainer ? 'grabbing' : 'grab') : 'default', // или 'none', если кисть скрывает курсор
       }}
     >
       <Stage
         ref={stageRef}
-        style={{ cursor: 'none' }}
+        style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
         width={parentWidth}
         height={parentHeight}
         onMouseDown={handleMouseDown}
