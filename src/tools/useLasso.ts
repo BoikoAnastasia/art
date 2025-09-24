@@ -7,7 +7,7 @@ export const useLasso = (tool: string) => {
   const isDrawing = useRef(false);
   // перетаскиваем ли готовое лассо
   const isDragging = useRef(false);
-  // определяем клик/драг   
+  // определяем клик/драг 
   const hasMoved = useRef(false);         
   const dragStart = useRef<{ x: number; y: number } | null>(null);
 

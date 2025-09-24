@@ -22,7 +22,6 @@ import { useTool } from '../../contexts/ToolsContext';
 
 export const LeftSideBar = () => {
   const { tool, setTool } = useTool();
-  console.log(tool);
   const sidebarButtons = [
     { id: 'move', icon: Move, isIcon: false, action: () => setTool('move') },
     { id: 'lasso', icon: Lasso, isIcon: false, action: () => setTool('lasso') },

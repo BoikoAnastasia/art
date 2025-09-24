@@ -7,7 +7,7 @@ export const pointInsidePolygon = (point: { x: number; y: number }, polygon: num
     const xi = polygon[i * 2], yi = polygon[i * 2 + 1];
     const xj = polygon[j * 2], yj = polygon[j * 2 + 1];
     const intersect =
-      yi > y !== yj > y &&
+      (yi > y) !== (yj > y) &&
       x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
     if (intersect) inside = !inside;
   }

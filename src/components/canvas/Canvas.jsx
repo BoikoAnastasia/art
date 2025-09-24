@@ -5,12 +5,14 @@ import { useColor } from '../../contexts/ColorContext';
 import { useSize } from '../../contexts/SizeContext';
 import { useOpacity } from '../../contexts/OpacityContext';
 import { useTool } from '../../contexts/ToolsContext';
-import { useLasso } from '../../tools/Lasso';
+import { useLasso } from '../../tools/useLasso';
+import { useFill } from '../../tools/useFill';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   // refs
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
+  const stageRef = useRef(null);
 
   // state
   const [lines, setLines] = useState([]);
@@ -19,10 +21,10 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   // context
-  const { color } = useColor();
+  const { color, setColor } = useColor();
   const { size } = useSize();
   const { size: opacity } = useOpacity();
-  const { tool } = useTool();
+  const { tool, setTool } = useTool();
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -34,6 +36,8 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     handleMouseMove: handleLassoMove,
     handleMouseUp: handleLassoUp,
   } = useLasso(tool);
+  // fiil
+  const { filledShapes, fillAtPoint } = useFill();
 
   // Обработчик масштабирования с учетом позиции курсора
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,9 +97,32 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
 
+    if (tool === 'fill') {
+      const stage = e.target.getStage();
+      const pos = stage.getPointerPosition();
+      fillAtPoint(pos, color, lassoPoints);
+    }
+
     if (tool === 'lasso') {
       handleLassoDown(pos);
       return;
+    }
+
+    if (tool === 'colorize') {
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      // Берём "реальный" canvas
+      const canvas = stage.toCanvas();
+      const ctx = canvas.getContext('2d');
+
+      // Получаем пиксель под курсором
+      const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data;
+      const [r, g, b, a] = pixel;
+      const rgba = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+      setColor(rgba);
+      setTool('pen');
+      return; // прерываем, чтобы не рисовать
     }
 
     isDrawing.current = true;
@@ -118,12 +145,6 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       updatedLines.splice(updatedLines.length - 1, 1, lastLine);
       setLines(updatedLines);
     }
-    // setLines((prevLines) => {
-    //   if (prevLines.length === 0) return prevLines;
-    //   const lastLine = { ...prevLines[prevLines.length - 1] };
-    //   lastLine.points = [...lastLine.points, point.x, point.y];
-    //   return [...prevLines.slice(0, prevLines.length - 1), lastLine];
-    // });
   };
 
   const handleMouseUp = () => {
@@ -147,6 +168,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       }}
     >
       <Stage
+        ref={stageRef}
         style={{ cursor: 'none' }}
         width={parentWidth}
         height={parentHeight}
@@ -158,9 +180,14 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         onTouchEnd={handleMouseUp}
       >
         <Layer>
-          <Rect x={0} y={0} width={parentWidth} height={parentHeight} />
+          {filledShapes.map((shape, i) =>
+            shape.closed ? (
+              <Line key={i} points={shape.points} fill={shape.fill} closed />
+            ) : (
+              <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
+            )
+          )}
           {lines.map((line, i) => {
-            console.log(`Line ${i}:`, line.tool, line.color, line.size);
             return (
               <Line
                 key={i}
@@ -184,7 +211,14 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
             strokeWidth={1}
           />
           {lassoPoints.length > 0 && (
-            <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed={true} dash={[4, 4]} />
+            <Line
+              // globalCompositeOperation="destination-out"
+              points={lassoPoints}
+              stroke="#000"
+              strokeWidth={1}
+              closed={true}
+              dash={[4, 4]}
+            />
           )}
         </Layer>
       </Stage>

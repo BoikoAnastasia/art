@@ -5,7 +5,6 @@ type Tool =
   | 'pen'
   | 'eraser'
   | 'lasso'
-  | 'brush'
   | 'fill'
   | 'torch'
   | 'search'
