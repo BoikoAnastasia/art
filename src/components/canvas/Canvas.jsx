@@ -13,11 +13,12 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
   const stageRef = useRef(null);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   // state
   const [lines, setLines] = useState([]);
-  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   // context
@@ -25,7 +26,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const { size } = useSize();
   const { size: opacity } = useOpacity();
   const { tool, setTool } = useTool();
-
+  const [isDraggingContainer, setIsDraggingContainer] = useState(false);
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
 
@@ -97,6 +98,8 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
 
+    if (tool === 'hand') return;
+
     if (tool === 'fill') {
       const stage = e.target.getStage();
       const pos = stage.getPointerPosition();
@@ -122,7 +125,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       const rgba = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
       setColor(rgba);
       setTool('pen');
-      return; // прерываем, чтобы не рисовать
+      return;
     }
 
     isDrawing.current = true;
@@ -155,9 +158,51 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     isDrawing.current = false;
   };
 
+  // dragg container
+  const handleContainerMouseDown = (e) => {
+    if (tool !== 'hand') return;
+    // Начинаем перетаскивание только если зажали мышь на фоне контейнера
+    if (containerRef.current) {
+      setIsDraggingContainer(true);
+      dragOffset.current = {
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      };
+    }
+  };
+
+  const handleContainerMouseMove = (e) => {
+    if (!isDraggingContainer || tool !== 'hand') return;
+    if (!isDraggingContainer) return;
+    setPosition({
+      x: e.clientX - dragOffset.current.x,
+      y: e.clientY - dragOffset.current.y,
+    });
+  };
+
+  const handleContainerMouseUp = () => {
+    if (tool !== 'hand') return;
+    setIsDraggingContainer(false);
+  };
+
+  useEffect(() => {
+    if (!isDraggingContainer) return;
+    const handleMove = (e) => handleContainerMouseMove(e);
+    const handleUp = () => handleContainerMouseUp();
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isDraggingContainer]);
+
   return (
     <div
       ref={containerRef}
+      onMouseDown={handleContainerMouseDown}
       style={{
         position: 'absolute',
         top: 0,
@@ -165,6 +210,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
         transformOrigin: '0 0',
         background: '#fff',
+        cursor: tool === 'hand' ? (isDraggingContainer ? 'grabbing' : 'grab') : 'default', // или 'none', если кисть скрывает курсор
       }}
     >
       <Stage
