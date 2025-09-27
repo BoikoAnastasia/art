@@ -1,4 +1,4 @@
-export const BRUSHES = {
+export const Brushes = {
   pen: {
     strokeCap: "round",
     strokeJoin: "round",

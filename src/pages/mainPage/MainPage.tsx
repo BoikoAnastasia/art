@@ -2,15 +2,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '../../components/canvas/Canvas';
 import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
 import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
 import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
 import { LayersPanel } from '../../components/layersPanel/LayersPanel';
+import { TopSidebar } from '../../components/topSidebar/TopSidebar';
 
 // icons
-// import RedoIcon from '@mui/icons-material/Redo';
-// import UndoIcon from '@mui/icons-material/Undo';
+
 // import SaveAltIcon from '@mui/icons-material/SaveAlt';
 // import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
 // import DeleteIcon from '@mui/icons-material/Delete';
@@ -50,17 +48,7 @@ export const MainPage = () => {
       }}
     >
       {/* Верхнее меню */}
-      <AppBar
-        position="static"
-        sx={{ zIndex: 10, background: '#232323', height: '50px', borderBottom: '1px solid #4c4c4cff' }}
-      >
-        <Toolbar>
-          <Box sx={{ flexGrow: 1, boxShadow: 'none' }}>
-            {/* Заголовок или другие элементы меню */}
-            Верхнее меню
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <TopSidebar />
 
       {/* Основное содержимое */}
       <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>

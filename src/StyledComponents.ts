@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { Box, Button, IconButton, Input, Slider } from '@mui/material';
+import { Box, Button, IconButton, Input, Menu, Slider } from '@mui/material';
 import { IStyledButtonLayer } from './types/share';
 
 
@@ -76,7 +76,7 @@ export const StyledLayersBoxItems = styled(Box)(() => ({
   },
 }))
 
-export const StyledButtonLayer = styled(Button, {
+export const StyledButtonLayer = styled(Box, {
   shouldForwardProp: (propName) => propName !== 'isActive',
 })<IStyledButtonLayer>(({isActive}) => ({
   display: 'inline-flex',
@@ -133,3 +133,46 @@ export const StyledRightSideBarBox = styled(Box)(() => ({
   padding: '0 16px',
 }))
 
+export const StyledButtonTopSidebar = styled(Button)(() => ({
+  display: 'inline-flex',
+  gap: '5px',
+  alignItems: 'center',
+  background: 'transparent',
+  color: 'white',
+  padding: '4px 12px',
+  minWidth: '80px',
+  textTransform: 'none' as const,
+  '&:hover': {
+    background: '#4c4c4cff'
+  },
+  '&.MuiButton-root':{
+    borderRadius: 0, 
+  }
+}))
+
+export const StyledIconButton = styled(IconButton)(() => ({
+  background: 'transparent',
+  color: 'white',
+  borderRadius: 0,
+  '&:hover': {
+    background: '#4c4c4cff'
+  },
+}))
+
+
+export const StyledMenu = styled(Menu)(() => ({
+  '& .MuiMenu-paper': {
+    backgroundColor: '#232323', // фон самого меню
+  },
+  '& .MuiList-root': {
+    backgroundColor: '#232323', // фон списка
+    color: '##fff', // серый текст по умолчанию
+  },
+  '& .MuiMenuItem-root': {
+    color: '#fff', // серый текст
+    '&:hover': {
+      backgroundColor: 'rgba(37, 37, 37, 1)323', // фон при наведении
+      color: '#dadadaff', // текст при наведении
+    },
+  },
+}))

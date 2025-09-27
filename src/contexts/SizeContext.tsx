@@ -10,6 +10,6 @@ export const SizeBrushProvider = ({ children }: { children: any }) => {
 
 export const useSize = () => {
   const ctx = useContext(SizeBrushContext);
-  if (!ctx) throw new Error('useColor must be used within SizeBrushContext');
+  if (!ctx) throw new Error('useSize must be used within SizeBrushContext');
   return ctx;
 };

@@ -10,6 +10,6 @@ export const OpacityContextProvider = ({ children }: { children: any }) => {
 
 export const useOpacity = () => {
   const ctx = useContext(OpacityContext);
-  if (!ctx) throw new Error('useColor must be used within OpacityContext');
+  if (!ctx) throw new Error('useOpacity must be used within OpacityContext');
   return ctx;
 };

@@ -10,7 +10,6 @@ import InterestsIcon from '@mui/icons-material/Interests';
 import LoopIcon from '@mui/icons-material/Loop';
 import BackHandIcon from '@mui/icons-material/BackHand';
 import FormatShapesIcon from '@mui/icons-material/FormatShapes';
-import AddToPhotosIcon from '@mui/icons-material/AddToPhotos';
 
 // images
 import Eraser from '../icons/eraser.png';
@@ -31,7 +30,6 @@ export const LeftSideBar = () => {
     { id: 'pen', icon: BrushIcon, isIcon: true, action: () => setTool('pen'), disabled: false },
     { id: 'fill', icon: FormatColorFillIcon, isIcon: true, action: () => setTool('fill'), disabled: false },
     { id: 'shape', icon: InterestsIcon, isIcon: true, action: () => setTool('shape'), disabled: true },
-    { id: 'addLayer', icon: AddToPhotosIcon, isIcon: true, action: () => setTool('addLayer'), disabled: true },
     { id: 'loop', icon: LoopIcon, isIcon: true, action: () => setTool('loop'), disabled: true },
     { id: 'hand', icon: BackHandIcon, isIcon: true, action: () => setTool('hand'), disabled: false },
     { id: 'format', icon: FormatShapesIcon, isIcon: true, action: () => setTool('format'), disabled: true },

@@ -14,6 +14,6 @@ export const ToolsProvider = ({ children }: { children: any }) => {
 
 export const useTool = () => {
   const ctx = useContext(ToolsContext);
-  if (!ctx) throw new Error('useColor must be used within SizeBrushContext');
+  if (!ctx) throw new Error('useTool must be used within ToolsContext');
   return ctx;
 };

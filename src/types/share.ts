@@ -9,7 +9,6 @@ export type Tool =
   | 'lasso'
   | 'fill'
   | 'blur'
-  | 'addLayer'
   | 'shape'
   | 'loop'
   | 'hand'
