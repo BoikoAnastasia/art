@@ -1,30 +1,9 @@
 import { createContext, useContext, useState } from 'react';
+import { Tool, ToolshContextType } from '../types/share';
 
-// TODO layers, move, lasso, fill, sensetive, shape, add brush,
+// TODO move, lasso, fill, sensetive, shape, add brush,
 // top icons, crop, format, highlight
 // save, load, etc
-
-type Tool =
-  | 'move'
-  | 'pen'
-  | 'eraser'
-  | 'lasso'
-  | 'fill'
-  | 'blur'
-  | 'addLayer'
-  | 'shape'
-  | 'loop'
-  | 'hand'
-  | 'format'
-  | 'crop'
-  | 'highlight'
-  | 'colorize'
-  | 'transparency';
-
-type ToolshContextType = {
-  tool: Tool;
-  setTool: (s: Tool) => void;
-};
 
 const ToolsContext = createContext<ToolshContextType | undefined>(undefined);
 

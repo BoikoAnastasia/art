@@ -1,14 +1,7 @@
 import { useState } from 'react';
 import { pointInsidePolygon } from '../utils/PointInsidePolygon';
+import { FilledShape } from '../types/share';
 
-// Тип залитой фигуры
-export type FilledShape = {
-  points: number[]; // если закрытая область, массив x,y
-  fill: string;
-  closed: boolean;
-};
-
-// Хук
 export const useFill = () => {
   const [filledShapes, setFilledShapes] = useState<FilledShape[]>([]);
 

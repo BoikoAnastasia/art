@@ -1,11 +1,7 @@
 import { createContext, useContext, useState } from 'react';
+import { SizeContextType } from '../types/share';
 
-type SizeBrushContextType = {
-  size: number;
-  setSize: (s: number) => void;
-};
-
-const SizeBrushContext = createContext<SizeBrushContextType | undefined>(undefined);
+const SizeBrushContext = createContext<SizeContextType | undefined>(undefined);
 
 export const SizeBrushProvider = ({ children }: { children: any }) => {
   const [size, setSize] = useState(5);

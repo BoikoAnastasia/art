@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 
 // icons
@@ -20,6 +19,7 @@ import Move from '../icons/move.png';
 import Tourch from '../icons/torch.png';
 import Transparency from '../icons/transparency.png';
 import { useTool } from '../../contexts/ToolsContext';
+import { StyledLeftSideBarBox } from '../../StyledComponents';
 
 export const LeftSideBar = () => {
   const { tool, setTool } = useTool();
@@ -42,34 +42,7 @@ export const LeftSideBar = () => {
   ];
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        width: '50px',
-        padding: '10px 0',
-        background: '#232323',
-        borderRight: '1px solid #4c4c4cff',
-        zIndex: 5,
-        overflowY: 'auto',
-        '&::-webkit-scrollbar': {
-          width: '5px',
-        },
-        '&::-webkit-scrollbar-track': {
-          background: '#4c4c4cff',
-          borderRadius: '5px',
-        },
-        '&::-webkit-scrollbar-thumb': {
-          background: '#dad7d7ff',
-          borderRadius: '5px',
-          border: 'none',
-        },
-        '&::-webkit-scrollbar-thumb:hover': {
-          background: '#4c4c4cff',
-        },
-      }}
-    >
+    <StyledLeftSideBarBox>
       {sidebarButtons.map((item) => (
         <IconButton
           disabled={item.disabled}
@@ -89,6 +62,6 @@ export const LeftSideBar = () => {
           )}
         </IconButton>
       ))}
-    </Box>
+    </StyledLeftSideBarBox>
   );
 };

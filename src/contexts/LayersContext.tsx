@@ -1,21 +1,6 @@
 import { createContext, useContext, useState } from 'react';
+import { LayersContextType, LayerType } from '../types/share';
 
-export type LayerType = {
-  id: string;
-  name: string;
-  lines: any[];
-  filledShapes: any[];
-};
-
-type LayersContextType = {
-  layers: LayerType[];
-  activeLayerId: string;
-  setActiveLayerId: (id: string) => void;
-  addLayer: (name?: string) => void;
-  removeLayer: (id: string) => void;
-  clearActiveLayer: () => void;
-  updateLayer: (lines: any[], filledShapes: any[]) => void;
-};
 let layerCounter = 1;
 
 const LayersContext = createContext<LayersContextType | undefined>(undefined);

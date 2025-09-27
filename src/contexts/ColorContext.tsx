@@ -1,9 +1,5 @@
 import { createContext, useContext, useState } from 'react';
-
-type ColorContextType = {
-  color: string;
-  setColor: (c: string) => void;
-};
+import { ColorContextType } from '../types/share';
 
 const ColorContext = createContext<ColorContextType | undefined>(undefined);
 
