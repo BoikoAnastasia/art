@@ -7,6 +7,13 @@ import Toolbar from '@mui/material/Toolbar';
 import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
 import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
 
+// icons
+// import RedoIcon from '@mui/icons-material/Redo';
+// import UndoIcon from '@mui/icons-material/Undo';
+// import SaveAltIcon from '@mui/icons-material/SaveAlt';
+// import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
+// import DeleteIcon from '@mui/icons-material/Delete';
+
 export const MainPage = () => {
   const [canvasWidth, setCanvasWidth] = useState(800); // Начальная ширина холста
   const [canvasHeight, setCanvasHeight] = useState(600); // Начальная высота холста

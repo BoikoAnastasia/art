@@ -201,6 +201,14 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     };
   }, [isDraggingContainer, tool]);
 
+  // очищаем весь слой
+  useEffect(() => {
+    if (tool === 'transparency') {
+      setLines([]);
+      setTool('pen');
+    }
+  }, [tool]);
+
   return (
     <div
       ref={containerRef}

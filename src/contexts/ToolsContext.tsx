@@ -11,14 +11,15 @@ type Tool =
   | 'lasso'
   | 'fill'
   | 'blur'
-  | 'search'
+  | 'addLayer'
   | 'shape'
   | 'loop'
   | 'hand'
   | 'format'
   | 'crop'
   | 'highlight'
-  | 'colorize';
+  | 'colorize'
+  | 'transparency';
 
 type ToolshContextType = {
   tool: Tool;
