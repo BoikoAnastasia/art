@@ -196,7 +196,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         ref={stageRef}
         width={parentWidth}
         height={parentHeight}
-        style={{ cursor: tool === 'hand' ? 'grab' : 'crosshair' }}
+        style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -227,11 +227,19 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
                 perfectDrawEnabled={false}
               />
             ))}
+            <Circle
+              x={hoverPos.x}
+              y={hoverPos.y}
+              radius={(size || 10) / 2}
+              stroke={tool === 'eraser' ? 'red' : color}
+              strokeWidth={1}
+            />
+            {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
           </Layer>
         ))}
 
         {/* Hover Brush Circle */}
-        <Layer>
+        {/* <Layer>
           <Circle
             x={hoverPos.x}
             y={hoverPos.y}
@@ -240,8 +248,82 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
             strokeWidth={1}
           />
           {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
-        </Layer>
+        </Layer> */}
       </Stage>
     </div>
   );
 };
+
+//   return (
+//     <div
+//       ref={containerRef}
+//       onMouseDown={(e) => {
+//         handleContainerMouseDown(e); // твой drag
+//       }}
+//       style={{
+//         position: 'absolute',
+//         top: 0,
+//         left: 0,
+//         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+//         transformOrigin: '0 0',
+//         background: '#fff',
+//       }}
+//     >
+//       <Stage
+//         ref={stageRef}
+//         style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
+//         width={parentWidth}
+//         height={parentHeight}
+//         onMouseDown={handleMouseDown}
+//         onMouseMove={handleMouseMove}
+//         onMouseUp={handleMouseUp}
+//         onTouchStart={handleMouseDown}
+//         onTouchMove={handleMouseMove}
+//         onTouchEnd={handleMouseUp}
+//       >
+//         <Layer>
+//           {filledShapes.map((shape, i) =>
+//             shape.closed ? (
+//               <Line key={i} points={shape.points} fill={shape.fill} closed />
+//             ) : (
+//               <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
+//             )
+//           )}
+//           {lines.map((line, i) => {
+//             return (
+//               <Line
+//                 key={i}
+//                 points={line.points}
+//                 stroke={line.color}
+//                 strokeWidth={line.size}
+//                 tension={0.5}
+//                 opacity={line.tool === 'eraser' ? 1 : line.opacity}
+//                 lineCap="round"
+//                 lineJoin="round"
+//                 globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+//                 perfectDrawEnabled={false}
+//               />
+//             );
+//           })}
+//           <Circle
+//             x={hoverPos.x}
+//             y={hoverPos.y}
+//             radius={(size || 10) / 2}
+//             stroke={tool === 'eraser' ? 'red' : color}
+//             strokeWidth={1}
+//           />
+//           {lassoPoints.length > 0 && (
+//             <Line
+//               // globalCompositeOperation="destination-out"
+//               points={lassoPoints}
+//               stroke="#000"
+//               strokeWidth={1}
+//               closed={true}
+//               dash={[4, 4]}
+//             />
+//           )}
+//         </Layer>
+//       </Stage>
+//     </div>
+//   );
+// };
