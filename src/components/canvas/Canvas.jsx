@@ -1,4 +1,4 @@
-// // Canvas.tsx
+// Canvas.tsx
 import { useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
 import { useColor } from '../../contexts/ColorContext';
@@ -7,30 +7,27 @@ import { useOpacity } from '../../contexts/OpacityContext';
 import { useTool } from '../../contexts/ToolsContext';
 import { useLasso } from '../../tools/useLasso';
 import { useFill } from '../../tools/useFill';
+import { useLayers } from '../../contexts/LayersContext';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
-  // refs
-  const isDrawing = useRef(false);
-  const containerRef = useRef(null);
   const stageRef = useRef(null);
+  const containerRef = useRef(null);
+  const isDrawing = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
-
-  // state
-  const [lines, setLines] = useState([]);
-  const [scale, setScale] = useState(1);
-  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  // boolean state
-  const [isDraggingContainer, setIsDraggingContainer] = useState(false);
 
   // context
   const { color, setColor } = useColor();
   const { size } = useSize();
   const { size: opacity } = useOpacity();
   const { tool, setTool } = useTool();
-  const MIN_SCALE = 0.0002;
-  const MAX_SCALE = 10000;
+  const { layers, activeLayerId, updateLayer } = useLayers();
+  const activeLayer = layers.find((l) => l.id === activeLayerId);
+
+  // state
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+  const [isDraggingContainer, setIsDraggingContainer] = useState(false);
 
   // lasso
   const {
@@ -39,28 +36,24 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     handleMouseMove: handleLassoMove,
     handleMouseUp: handleLassoUp,
   } = useLasso(tool);
-  // fiil
   const { filledShapes, fillAtPoint } = useFill();
 
-  // Обработчик масштабирования с учетом позиции курсора
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const MIN_SCALE = 0.0002;
+  const MAX_SCALE = 10000;
+
+  // ---------- Zoom ----------
   const handleZoom = (e, zoomIn) => {
     e.preventDefault();
     e.stopPropagation();
-
     const oldScale = scale;
     const scaleBy = 1.1;
     const newScale = zoomIn ? oldScale * scaleBy : oldScale / scaleBy;
     const limitedScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
 
-    // Получаем позицию курсора относительно родительского контейнера
     const parentRect = parentContainerRef.current.getBoundingClientRect();
-
-    // Координаты курсора относительно родительского контейнера
     const mouseX = e.clientX - parentRect.left;
     const mouseY = e.clientY - parentRect.top;
 
-    // Вычисляем новую позицию для масштабирования относительно курсора
     const scaleFactor = limitedScale / oldScale;
     const newX = mouseX - (mouseX - position.x) * scaleFactor;
     const newY = mouseY - (mouseY - position.y) * scaleFactor;
@@ -69,43 +62,35 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     setPosition({ x: newX, y: newY });
   };
 
-  // Обработчик колесика мыши для родительского контейнера
   useEffect(() => {
     if (!parentContainerRef.current) return;
-
     const handleWheel = (e) => {
-      // Проверяем, что событие произошло в области родительского контейнера
       const parentRect = parentContainerRef.current.getBoundingClientRect();
       const isOverParent =
         e.clientX >= parentRect.left &&
         e.clientX <= parentRect.right &&
         e.clientY >= parentRect.top &&
         e.clientY <= parentRect.bottom;
-
-      if (isOverParent) {
-        const zoomIn = e.deltaY < 0;
-        handleZoom(e, zoomIn);
-      }
+      if (isOverParent) handleZoom(e, e.deltaY < 0);
     };
 
     const parentContainer = parentContainerRef.current;
     parentContainer.addEventListener('wheel', handleWheel, { passive: false });
+    return () => parentContainer.removeEventListener('wheel', handleWheel);
+  }, [scale, position, parentContainerRef]);
 
-    return () => {
-      parentContainer.removeEventListener('wheel', handleWheel);
-    };
-  }, [scale, position, parentContainerRef, handleZoom]);
-
+  // ---------- Mouse Handlers ----------
   const handleMouseDown = (e) => {
+    if (!activeLayer) return;
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
+    if (!pos) return;
 
     if (tool === 'hand' || tool === 'loop') return;
 
     if (tool === 'fill') {
-      const stage = e.target.getStage();
-      const pos = stage.getPointerPosition();
       fillAtPoint(pos, color, lassoPoints);
+      return;
     }
 
     if (tool === 'lasso') {
@@ -114,14 +99,8 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     }
 
     if (tool === 'colorize') {
-      const stage = stageRef.current;
-      if (!stage) return;
-
-      // Берём "реальный" canvas
       const canvas = stage.toCanvas();
       const ctx = canvas.getContext('2d');
-
-      // Получаем пиксель под курсором
       const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data;
       const [r, g, b, a] = pixel;
       const rgba = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
@@ -131,24 +110,27 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     }
 
     isDrawing.current = true;
-    setLines([...lines, { tool, size, color, opacity: opacity / 100, points: [pos.x, pos.y] }]);
+    const newLine = { tool, size, color, opacity: opacity / 100, points: [pos.x, pos.y] };
+    updateLayer([...activeLayer.lines, newLine], activeLayer.filledShapesLayer);
   };
 
   const handleMouseMove = (e) => {
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
     if (pos) setHoverPos(pos);
+
     if (tool === 'lasso') {
       handleLassoMove(pos);
       return;
     }
-    if (!isDrawing.current) return;
-    const updatedLines = [...lines];
+
+    if (!isDrawing.current || !activeLayer) return;
+
+    const updatedLines = [...activeLayer.lines];
     const lastLine = updatedLines[updatedLines.length - 1];
     if (lastLine) {
       lastLine.points = lastLine.points.concat([pos.x, pos.y]);
-      updatedLines.splice(updatedLines.length - 1, 1, lastLine);
-      setLines(updatedLines);
+      updateLayer(updatedLines, activeLayer.filledShapesLayer);
     }
   };
 
@@ -160,30 +142,19 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     isDrawing.current = false;
   };
 
-  // dragg container
+  // ---------- Drag Canvas ----------
   const handleContainerMouseDown = (e) => {
     if (tool !== 'hand') return;
-    // Начинаем перетаскивание только если зажали мышь на фоне контейнера
-    if (containerRef.current) {
-      setIsDraggingContainer(true);
-      dragOffset.current = {
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      };
-    }
+    setIsDraggingContainer(true);
+    dragOffset.current = { x: e.clientX - position.x, y: e.clientY - position.y };
   };
 
   const handleContainerMouseMove = (e) => {
     if (!isDraggingContainer || tool !== 'hand') return;
-    if (!isDraggingContainer) return;
-    setPosition({
-      x: e.clientX - dragOffset.current.x,
-      y: e.clientY - dragOffset.current.y,
-    });
+    setPosition({ x: e.clientX - dragOffset.current.x, y: e.clientY - dragOffset.current.y });
   };
 
   const handleContainerMouseUp = () => {
-    if (tool !== 'hand') return;
     setIsDraggingContainer(false);
   };
 
@@ -191,30 +162,27 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     if (!isDraggingContainer) return;
     const handleMove = (e) => handleContainerMouseMove(e);
     const handleUp = () => handleContainerMouseUp();
-
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
   }, [isDraggingContainer, tool]);
 
-  // очищаем весь слой
+  // ---------- Clear Active Layer ----------
   useEffect(() => {
-    if (tool === 'transparency') {
-      setLines([]);
+    if (tool === 'transparency' && activeLayer) {
+      updateLayer([], []);
       setTool('pen');
     }
-  }, [tool]);
+  }, [tool, activeLayer]);
 
+  // ---------- Render ----------
   return (
     <div
       ref={containerRef}
-      onMouseDown={(e) => {
-        handleContainerMouseDown(e); // твой drag
-      }}
+      onMouseDown={handleContainerMouseDown}
       style={{
         position: 'absolute',
         top: 0,
@@ -226,9 +194,9 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     >
       <Stage
         ref={stageRef}
-        style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
         width={parentWidth}
         height={parentHeight}
+        style={{ cursor: tool === 'hand' ? 'grab' : 'crosshair' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -236,16 +204,16 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
       >
-        <Layer>
-          {filledShapes.map((shape, i) =>
-            shape.closed ? (
-              <Line key={i} points={shape.points} fill={shape.fill} closed />
-            ) : (
-              <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
-            )
-          )}
-          {lines.map((line, i) => {
-            return (
+        {layers?.map((layer) => (
+          <Layer key={layer.id}>
+            {layer.filledShapesLayer?.map((shape, i) =>
+              shape.closed ? (
+                <Line key={i} points={shape.points} fill={shape.fill} closed />
+              ) : (
+                <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
+              )
+            )}
+            {layer.lines?.map((line, i) => (
               <Line
                 key={i}
                 points={line.points}
@@ -258,8 +226,12 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
                 globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
                 perfectDrawEnabled={false}
               />
-            );
-          })}
+            ))}
+          </Layer>
+        ))}
+
+        {/* Hover Brush Circle */}
+        <Layer>
           <Circle
             x={hoverPos.x}
             y={hoverPos.y}
@@ -267,16 +239,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
             stroke={tool === 'eraser' ? 'red' : color}
             strokeWidth={1}
           />
-          {lassoPoints.length > 0 && (
-            <Line
-              // globalCompositeOperation="destination-out"
-              points={lassoPoints}
-              stroke="#000"
-              strokeWidth={1}
-              closed={true}
-              dash={[4, 4]}
-            />
-          )}
+          {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
         </Layer>
       </Stage>
     </div>

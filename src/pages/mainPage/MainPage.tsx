@@ -6,6 +6,7 @@ import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
 import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
+import { LayersPanel } from '../../components/layersPanel/LayersPanel';
 
 // icons
 // import RedoIcon from '@mui/icons-material/Redo';
@@ -85,21 +86,7 @@ export const MainPage = () => {
         <RightSideBar />
 
         {/* Нижнее меню */}
-        <Box
-          sx={{
-            position: 'absolute',
-            height: '50px',
-            background: '#232323',
-            borderTop: '1px solid #4c4c4cff',
-            display: 'flex',
-            alignItems: 'center',
-            zIndex: 4,
-            width: '100%',
-            bottom: 0,
-          }}
-        >
-          Нижнее меню
-        </Box>
+        <LayersPanel />
       </Box>
     </Box>
   );
