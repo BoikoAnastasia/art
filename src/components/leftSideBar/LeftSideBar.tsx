@@ -26,7 +26,7 @@ export const LeftSideBar = () => {
     { id: 'move', icon: Move, isIcon: false, action: () => setTool('move') },
     { id: 'lasso', icon: Lasso, isIcon: false, action: () => setTool('lasso') },
     { id: 'eraser', icon: Eraser, isIcon: false, action: () => setTool('eraser') },
-    { id: 'torch', icon: Tourch, isIcon: false, action: () => setTool('torch') },
+    { id: 'blur', icon: Tourch, isIcon: false, action: () => setTool('blur') },
     { id: 'pen', icon: BrushIcon, isIcon: true, action: () => setTool('pen') },
     { id: 'fill', icon: FormatColorFillIcon, isIcon: true, action: () => setTool('fill') },
     { id: 'shape', icon: InterestsIcon, isIcon: true, action: () => setTool('shape') },

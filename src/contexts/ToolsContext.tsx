@@ -1,12 +1,16 @@
 import { createContext, useContext, useState } from 'react';
 
+// TODO layers, move, lasso, fill, sensetive, shape, add brush,
+// top icons, crop, format, highlight
+// save, load, etc
+
 type Tool =
   | 'move'
   | 'pen'
   | 'eraser'
   | 'lasso'
   | 'fill'
-  | 'torch'
+  | 'blur'
   | 'search'
   | 'shape'
   | 'loop'

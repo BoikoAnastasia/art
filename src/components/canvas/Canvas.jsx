@@ -21,12 +21,14 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
+  // boolean state
+  const [isDraggingContainer, setIsDraggingContainer] = useState(false);
+
   // context
   const { color, setColor } = useColor();
   const { size } = useSize();
   const { size: opacity } = useOpacity();
   const { tool, setTool } = useTool();
-  const [isDraggingContainer, setIsDraggingContainer] = useState(false);
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
 
@@ -98,7 +100,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
 
-    if (tool === 'hand') return;
+    if (tool === 'hand' || tool === 'loop') return;
 
     if (tool === 'fill') {
       const stage = e.target.getStage();
@@ -197,12 +199,14 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [isDraggingContainer]);
+  }, [isDraggingContainer, tool]);
 
   return (
     <div
       ref={containerRef}
-      onMouseDown={handleContainerMouseDown}
+      onMouseDown={(e) => {
+        handleContainerMouseDown(e); // твой drag
+      }}
       style={{
         position: 'absolute',
         top: 0,
