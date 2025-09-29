@@ -16,7 +16,8 @@ export type Tool =
   | 'crop'
   | 'highlight'
   | 'colorize'
-  | 'transparency';
+  | 'transparency'
+  | 'calligraphy';
 
 
 export type ColorContextType = {

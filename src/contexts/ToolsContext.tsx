@@ -8,7 +8,7 @@ import { Tool, ToolshContextType } from '../types/share';
 const ToolsContext = createContext<ToolshContextType | undefined>(undefined);
 
 export const ToolsProvider = ({ children }: { children: any }) => {
-  const [tool, setTool] = useState<Tool>('pen');
+  const [tool, setTool] = useState<Tool>('calligraphy');
   return <ToolsContext.Provider value={{ tool, setTool }}>{children}</ToolsContext.Provider>;
 };
 

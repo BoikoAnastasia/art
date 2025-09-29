@@ -1,6 +1,6 @@
 // Canvas.tsx
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Line, Rect, Circle, Group } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle, Group, Shape } from 'react-konva';
 import { useColor } from '../../contexts/ColorContext';
 import { useSize } from '../../contexts/SizeContext';
 import { useOpacity } from '../../contexts/OpacityContext';
@@ -9,6 +9,7 @@ import { useLasso } from '../../tools/useLasso';
 import { useFill } from '../../tools/useFill';
 import { useLayers } from '../../contexts/LayersContext';
 import { useFlip } from '../../contexts/FlipContext';
+import { calligraphyBrush } from '../../brush/calligraphyBrush';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const stageRef = useRef(null);
@@ -112,16 +113,32 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     // логическая позиция для записи в слои (компенсация flip)
     const logicalPos = toLogicalPos(pos);
 
+    if (tool === 'calligraphy') {
+      isDrawing.current = true;
+      const newStroke = {
+        tool: 'calligraphy',
+        size,
+        color,
+        opacity: opacity / 100,
+        points: [logicalPos],
+        brushState: {}, // инициализация
+      };
+      updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapesLayer);
+      return;
+    }
+
     if (tool === 'hand' || tool === 'loop') return;
 
     if (tool === 'fill') {
       fillAtPoint(logicalPos, color, lassoPoints);
       return;
     }
+
     if (tool === 'lasso') {
       handleLassoDown(logicalPos);
       return;
     }
+
     if (tool === 'colorize') {
       const canvas = stage.toCanvas();
       const ctx = canvas.getContext('2d');
@@ -166,6 +183,38 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
 
     // логическая позиция для записи в данные слоя
     const logicalPos = toLogicalPos(pos);
+
+    if (tool === 'calligraphy') {
+      const updatedLines = [...activeLayer.lines];
+      const lastStroke = updatedLines[updatedLines.length - 1];
+      if (lastStroke && lastStroke.tool === 'calligraphy') {
+        const points = lastStroke.points;
+        if (!points || points.length === 0) return; // <-- защита от undefined
+
+        const prevPoint = points[points.length - 1];
+        const brushState = lastStroke.brushState || {};
+
+        // рисуем на canvas
+        const stage = stageRef.current.getStage();
+        if (stage) {
+          const ctx = stage.toCanvas().getContext('2d');
+          if (ctx && prevPoint && logicalPos) {
+            lastStroke.brushState = calligraphyBrush({
+              ctx,
+              start: prevPoint,
+              end: logicalPos,
+              color: lastStroke.color,
+              size: lastStroke.size,
+              state: brushState,
+            });
+          }
+        }
+
+        points.push(logicalPos);
+        updateLayer(updatedLines, activeLayer.filledShapesLayer);
+      }
+      return;
+    }
 
     const updatedLines = [...activeLayer.lines];
     const lastLine = updatedLines[updatedLines.length - 1];
@@ -262,20 +311,60 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
                 )
               )}
 
-              {layer.lines?.map((line, i) => (
-                <Line
-                  key={i}
-                  points={line.points}
-                  stroke={line.color}
-                  strokeWidth={line.size}
-                  tension={0.5}
-                  opacity={line.tool === 'eraser' ? 1 : line.opacity}
-                  lineCap="round"
-                  lineJoin="round"
-                  globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-                  perfectDrawEnabled={false}
-                />
-              ))}
+              {layer.lines?.map((line, i) => {
+                if (line.tool === 'calligraphy') {
+                  return (
+                    <Shape
+                      key={i}
+                      sceneFunc={(ctx, shape) => {
+                        ctx.save();
+                        ctx.globalAlpha = line.opacity;
+
+                        let brushState = line.brushState || {};
+
+                        for (let j = 1; j < line.points.length; j++) {
+                          const start = line.points[j - 1];
+                          const end = line.points[j];
+
+                          // защита от undefined
+                          if (!start || !end || start.x == null || start.y == null || end.x == null || end.y == null)
+                            continue;
+
+                          brushState = calligraphyBrush({
+                            ctx,
+                            start,
+                            end,
+                            color: line.color,
+                            size: line.size,
+                            ...brushState,
+                          });
+                        }
+
+                        ctx.restore();
+                        ctx.fillStrokeShape(shape);
+                      }}
+                    />
+                  );
+                }
+
+                // fallback для обычной линии
+                return (
+                  <Line
+                    key={i}
+                    points={line.points.flatMap((p) =>
+                      typeof p === 'object' && p !== null && 'x' in p ? [p.x, p.y] : p
+                    )}
+                    stroke={line.color}
+                    strokeWidth={line.size}
+                    tension={0.5}
+                    opacity={line.tool === 'eraser' ? 1 : line.opacity}
+                    lineCap="round"
+                    lineJoin="round"
+                    globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                    perfectDrawEnabled={false}
+                  />
+                );
+              })}
 
               {lassoPoints.length > 0 && (
                 <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />
