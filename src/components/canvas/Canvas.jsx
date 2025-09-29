@@ -1,6 +1,6 @@
 // Canvas.tsx
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Line, Rect, Circle } from 'react-konva';
+import { Stage, Layer, Line, Rect, Circle, Group } from 'react-konva';
 import { useColor } from '../../contexts/ColorContext';
 import { useSize } from '../../contexts/SizeContext';
 import { useOpacity } from '../../contexts/OpacityContext';
@@ -8,6 +8,7 @@ import { useTool } from '../../contexts/ToolsContext';
 import { useLasso } from '../../tools/useLasso';
 import { useFill } from '../../tools/useFill';
 import { useLayers } from '../../contexts/LayersContext';
+import { useFlip } from '../../contexts/FlipContext';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const stageRef = useRef(null);
@@ -37,6 +38,9 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     handleMouseUp: handleLassoUp,
   } = useLasso(tool);
   const { filledShapes, fillAtPoint } = useFill();
+
+  // flip
+  const { flipX, flipY } = useFlip();
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -79,6 +83,23 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     return () => parentContainer.removeEventListener('wheel', handleWheel);
   }, [scale, position, parentContainerRef]);
 
+  const getStagePosFromClient = (clientX, clientY) => {
+    if (!parentContainerRef.current) return { x: 0, y: 0 };
+    const rect = parentContainerRef.current.getBoundingClientRect();
+    // Сначала получаем координату внутри контейнера в пикселях,
+    // затем компенсируем translate (position) и масштаб (scale).
+    const x = (clientX - rect.left - position.x) / scale;
+    const y = (clientY - rect.top - position.y) / scale;
+    return { x, y };
+  };
+
+  const toLogicalPos = (pos) => {
+    if (!pos) return pos;
+    return {
+      x: flipX ? parentWidth - pos.x : pos.x,
+      y: flipY ? parentHeight - pos.y : pos.y,
+    };
+  };
   // ---------- Mouse Handlers ----------
   const handleMouseDown = (e) => {
     if (!activeLayer) return;
@@ -86,22 +107,25 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     const pos = stage.getPointerPosition();
     if (!pos) return;
 
+    // визуальная позиция для курсора / color picker
+    const visualPos = pos;
+    // логическая позиция для записи в слои (компенсация flip)
+    const logicalPos = toLogicalPos(pos);
+
     if (tool === 'hand' || tool === 'loop') return;
 
     if (tool === 'fill') {
-      fillAtPoint(pos, color, lassoPoints);
+      fillAtPoint(logicalPos, color, lassoPoints);
       return;
     }
-
     if (tool === 'lasso') {
-      handleLassoDown(pos);
+      handleLassoDown(logicalPos);
       return;
     }
-
     if (tool === 'colorize') {
       const canvas = stage.toCanvas();
       const ctx = canvas.getContext('2d');
-      const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data;
+      const pixel = ctx.getImageData(visualPos.x, visualPos.y, 1, 1).data;
       const [r, g, b, a] = pixel;
       const rgba = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
       setColor(rgba);
@@ -110,26 +134,43 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     }
 
     isDrawing.current = true;
-    const newLine = { tool, size, color, opacity: opacity / 100, points: [pos.x, pos.y] };
+    const newLine = { tool, size, color, opacity: opacity / 100, points: [logicalPos.x, logicalPos.y] };
     updateLayer([...activeLayer.lines, newLine], activeLayer.filledShapesLayer);
   };
 
   const handleMouseMove = (e) => {
-    const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
-    if (pos) setHoverPos(pos);
+    // Для react-konva событие хранит оригинальный DOM евент в e.evt
+    const clientX = e?.evt?.clientX ?? e.clientX ?? 0;
+    const clientY = e?.evt?.clientY ?? e.clientY ?? 0;
 
-    if (tool === 'lasso') {
-      handleLassoMove(pos);
+    // вычисляем визуальную позицию для кружка
+    const visualPos = getStagePosFromClient(clientX, clientY);
+    setHoverPos(visualPos);
+
+    // Если не рисуем — больше ничего не делаем (но курсор всё равно обновлён)
+    if (!isDrawing.current || !activeLayer) {
+      if (tool === 'lasso') {
+        // берём pos через stage и передаём логические координаты
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+        if (pos) {
+          const logicalPos = toLogicalPos(pos);
+          handleLassoMove(logicalPos);
+        }
+      }
       return;
     }
+    const stage = e.target.getStage();
+    const pos = stage.getPointerPosition();
+    if (!pos || !isDrawing.current || !activeLayer) return;
 
-    if (!isDrawing.current || !activeLayer) return;
+    // логическая позиция для записи в данные слоя
+    const logicalPos = toLogicalPos(pos);
 
     const updatedLines = [...activeLayer.lines];
     const lastLine = updatedLines[updatedLines.length - 1];
     if (lastLine) {
-      lastLine.points = lastLine.points.concat([pos.x, pos.y]);
+      lastLine.points = lastLine.points.concat([logicalPos.x, logicalPos.y]);
       updateLayer(updatedLines, activeLayer.filledShapesLayer);
     }
   };
@@ -204,126 +245,56 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
       >
+        {/* Группа с инверсией и компенсацией смещения */}
         {layers?.map((layer) => (
           <Layer key={layer.id}>
-            {layer.filledShapesLayer?.map((shape, i) =>
-              shape.closed ? (
-                <Line key={i} points={shape.points} fill={shape.fill} closed />
-              ) : (
-                <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
-              )
-            )}
-            {layer.lines?.map((line, i) => (
-              <Line
-                key={i}
-                points={line.points}
-                stroke={line.color}
-                strokeWidth={line.size}
-                tension={0.5}
-                opacity={line.tool === 'eraser' ? 1 : line.opacity}
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-                perfectDrawEnabled={false}
-              />
-            ))}
-            <Circle
-              x={hoverPos.x}
-              y={hoverPos.y}
-              radius={(size || 10) / 2}
-              stroke={tool === 'eraser' ? 'red' : color}
-              strokeWidth={1}
-            />
-            {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
+            <Group
+              x={flipX ? parentWidth : 0}
+              y={flipY ? parentHeight : 0}
+              scaleX={flipX ? -1 : 1}
+              scaleY={flipY ? -1 : 1}
+            >
+              {layer.filledShapesLayer?.map((shape, i) =>
+                shape.closed ? (
+                  <Line key={i} points={shape.points} fill={shape.fill} closed />
+                ) : (
+                  <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
+                )
+              )}
+
+              {layer.lines?.map((line, i) => (
+                <Line
+                  key={i}
+                  points={line.points}
+                  stroke={line.color}
+                  strokeWidth={line.size}
+                  tension={0.5}
+                  opacity={line.tool === 'eraser' ? 1 : line.opacity}
+                  lineCap="round"
+                  lineJoin="round"
+                  globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                  perfectDrawEnabled={false}
+                />
+              ))}
+
+              {lassoPoints.length > 0 && (
+                <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />
+              )}
+            </Group>
           </Layer>
         ))}
 
-        {/* Hover Brush Circle */}
-        {/* <Layer>
+        {/* Отдельный слой для курсора без инверсии */}
+        <Layer>
           <Circle
             x={hoverPos.x}
             y={hoverPos.y}
             radius={(size || 10) / 2}
-            stroke={tool === 'eraser' ? 'red' : color}
+            stroke={tool === 'pen' ? color : 'none'}
             strokeWidth={1}
           />
-          {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
-        </Layer> */}
+        </Layer>
       </Stage>
     </div>
   );
 };
-
-//   return (
-//     <div
-//       ref={containerRef}
-//       onMouseDown={(e) => {
-//         handleContainerMouseDown(e); // твой drag
-//       }}
-//       style={{
-//         position: 'absolute',
-//         top: 0,
-//         left: 0,
-//         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-//         transformOrigin: '0 0',
-//         background: '#fff',
-//       }}
-//     >
-//       <Stage
-//         ref={stageRef}
-//         style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
-//         width={parentWidth}
-//         height={parentHeight}
-//         onMouseDown={handleMouseDown}
-//         onMouseMove={handleMouseMove}
-//         onMouseUp={handleMouseUp}
-//         onTouchStart={handleMouseDown}
-//         onTouchMove={handleMouseMove}
-//         onTouchEnd={handleMouseUp}
-//       >
-//         <Layer>
-//           {filledShapes.map((shape, i) =>
-//             shape.closed ? (
-//               <Line key={i} points={shape.points} fill={shape.fill} closed />
-//             ) : (
-//               <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
-//             )
-//           )}
-//           {lines.map((line, i) => {
-//             return (
-//               <Line
-//                 key={i}
-//                 points={line.points}
-//                 stroke={line.color}
-//                 strokeWidth={line.size}
-//                 tension={0.5}
-//                 opacity={line.tool === 'eraser' ? 1 : line.opacity}
-//                 lineCap="round"
-//                 lineJoin="round"
-//                 globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-//                 perfectDrawEnabled={false}
-//               />
-//             );
-//           })}
-//           <Circle
-//             x={hoverPos.x}
-//             y={hoverPos.y}
-//             radius={(size || 10) / 2}
-//             stroke={tool === 'eraser' ? 'red' : color}
-//             strokeWidth={1}
-//           />
-//           {lassoPoints.length > 0 && (
-//             <Line
-//               // globalCompositeOperation="destination-out"
-//               points={lassoPoints}
-//               stroke="#000"
-//               strokeWidth={1}
-//               closed={true}
-//               dash={[4, 4]}
-//             />
-//           )}
-//         </Layer>
-//       </Stage>
-//     </div>
-//   );
-// };

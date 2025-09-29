@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { AppBar, Box, Menu, MenuItem, Toolbar } from '@mui/material';
+import { AppBar, Box, MenuItem, Toolbar } from '@mui/material';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import { StyledButtonTopSidebar, StyledIconButton, StyledMenu } from '../../StyledComponents';
+import { useFlip } from '../../contexts/FlipContext';
 
 export const TopSidebar = () => {
   const [anchorElFile, setAnchorElFile] = useState<null | HTMLElement>(null);
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
+
+  const { setFlipX, setFlipY, flipX, flipY } = useFlip();
 
   const openFile = Boolean(anchorElFile);
   const openEdit = Boolean(anchorElEdit);
@@ -94,10 +97,10 @@ export const TopSidebar = () => {
         </Box>
 
         {/* Иконки */}
-        <StyledIconButton>
+        <StyledIconButton onClick={() => setFlipX(!flipX)}>
           <SwapHorizIcon />
         </StyledIconButton>
-        <StyledIconButton>
+        <StyledIconButton onClick={() => setFlipY(!flipY)}>
           <SwapVertIcon />
         </StyledIconButton>
         <StyledIconButton>
