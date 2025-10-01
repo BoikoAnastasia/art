@@ -23,7 +23,7 @@ import { StyledLeftSideBarBox } from '../../StyledComponents';
 export const LeftSideBar = () => {
   const { tool, setTool } = useTool();
   const sidebarButtons = [
-    { id: 'move', icon: Move, isIcon: false, action: () => setTool('move'), disabled: true },
+    { id: 'move', icon: Move, isIcon: false, action: () => setTool('move'), disabled: false },
     { id: 'lasso', icon: Lasso, isIcon: false, action: () => setTool('lasso'), disabled: false },
     { id: 'eraser', icon: Eraser, isIcon: false, action: () => setTool('eraser'), disabled: false },
     { id: 'blur', icon: Tourch, isIcon: false, action: () => setTool('blur'), disabled: true },

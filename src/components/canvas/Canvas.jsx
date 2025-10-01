@@ -17,6 +17,9 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const containerRef = useRef(null);
   const isDrawing = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const [tempCanvasOffset, setTempCanvasOffset] = useState({ x: 0, y: 0 });
+  const moveStart = useRef({ x: 0, y: 0 });
+  const isMovingCanvas = useRef(false);
 
   // context
   const { color, setColor } = useColor();
@@ -89,8 +92,6 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const getStagePosFromClient = (clientX, clientY) => {
     if (!parentContainerRef.current) return { x: 0, y: 0 };
     const rect = parentContainerRef.current.getBoundingClientRect();
-    // Сначала получаем координату внутри контейнера в пикселях,
-    // затем компенсируем translate (position) и масштаб (scale).
     const x = (clientX - rect.left - position.x) / scale;
     const y = (clientY - rect.top - position.y) / scale;
     return { x, y };
@@ -103,6 +104,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       y: flipY ? parentHeight - pos.y : pos.y,
     };
   };
+
   // ---------- Mouse Handlers ----------
   const handleMouseDown = (e) => {
     if (!activeLayer) return;
@@ -110,10 +112,15 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     const pos = stage.getPointerPosition();
     if (!pos) return;
 
-    // визуальная позиция для курсора / color picker
     const visualPos = pos;
-    // логическая позиция для записи в слои (компенсация flip)
     const logicalPos = toLogicalPos(pos);
+
+    // Режим перемещения - начинаем перетаскивание холста
+    if (tool === 'move') {
+      moveStart.current = pos;
+      isMovingCanvas.current = true;
+      return;
+    }
 
     if (tool === 'pen') {
       isDrawing.current = true;
@@ -159,33 +166,33 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   };
 
   const handleMouseMove = (e) => {
-    // Для react-konva событие хранит оригинальный DOM евент в e.evt
     const clientX = e?.evt?.clientX ?? e.clientX ?? 0;
     const clientY = e?.evt?.clientY ?? e.clientY ?? 0;
 
-    // вычисляем визуальную позицию для кружка
     const visualPos = getStagePosFromClient(clientX, clientY);
     setHoverPos(visualPos);
 
-    // Если не рисуем — больше ничего не делаем (но курсор всё равно обновлён)
+    const stage = e.target.getStage();
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    const logicalPos = toLogicalPos(pos);
+
+    // Режим перемещения - временное перемещение холста
+    if (tool === 'move' && isMovingCanvas.current) {
+      const dx = pos.x - moveStart.current.x;
+      const dy = pos.y - moveStart.current.y;
+      setTempCanvasOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+      moveStart.current = pos;
+      return;
+    }
+
     if (!isDrawing.current || !activeLayer) {
       if (tool === 'lasso') {
-        // берём pos через stage и передаём логические координаты
-        const stage = e.target.getStage();
-        const pos = stage.getPointerPosition();
-        if (pos) {
-          const logicalPos = toLogicalPos(pos);
-          handleLassoMove(logicalPos);
-        }
+        handleLassoMove(logicalPos);
       }
       return;
     }
-    const stage = e.target.getStage();
-    const pos = stage.getPointerPosition();
-    if (!pos || !isDrawing.current || !activeLayer) return;
-
-    // логическая позиция для записи в данные слоя
-    const logicalPos = toLogicalPos(pos);
 
     if (tool === 'pen') {
       const updatedLines = [...activeLayer.lines];
@@ -218,9 +225,60 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const handleMouseUp = () => {
     if (tool === 'lasso') {
       handleLassoUp();
-      return;
+    } else if (tool === 'move' && isMovingCanvas.current) {
+      // Применяем смещение ко всем слоям
+      applyCanvasOffsetToLayers();
+      isMovingCanvas.current = false;
     }
     isDrawing.current = false;
+  };
+
+  // Функция для применения смещения ко всем слоям
+  const applyCanvasOffsetToLayers = () => {
+    if (tempCanvasOffset.x === 0 && tempCanvasOffset.y === 0) return;
+
+    // Применяем смещение ко всем слоям
+    layers.forEach((layer) => {
+      const updatedLines = layer.lines.map((line) => ({
+        ...line,
+        points: applyOffsetToPoints(line.points, tempCanvasOffset.x, tempCanvasOffset.y),
+      }));
+
+      const updatedFilledShapes = layer.filledShapes.map((shape) => ({
+        ...shape,
+        points: applyOffsetToPoints(shape.points, tempCanvasOffset.x, tempCanvasOffset.y),
+      }));
+
+      updateLayer(updatedLines, updatedFilledShapes);
+    });
+
+    // Сбрасываем временное смещение
+    setTempCanvasOffset({ x: 0, y: 0 });
+  };
+
+  // Функция для применения смещения к точкам
+  const applyOffsetToPoints = (points, offsetX, offsetY) => {
+    if (!points || points.length === 0) return points;
+
+    // Если points - это массив объектов {x, y}
+    if (typeof points[0] === 'object') {
+      return points.map((point) => ({
+        ...point,
+        x: point.x + offsetX,
+        y: point.y + offsetY,
+      }));
+    }
+
+    // Если points - это плоский массив [x, y, x, y, ...]
+    return points.map((coord, index) => {
+      if (index % 2 === 0) {
+        // x координата
+        return coord + offsetX;
+      } else {
+        // y координата
+        return coord + offsetY;
+      }
+    });
   };
 
   // ---------- Drag Canvas ----------
@@ -277,7 +335,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         ref={stageRef}
         width={parentWidth}
         height={parentHeight}
-        style={{ cursor: tool === 'hand' ? 'grab' : 'none' }}
+        style={{ cursor: tool === 'hand' ? 'grab' : tool === 'move' ? 'move' : 'none' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -285,12 +343,12 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         onTouchMove={handleMouseMove}
         onTouchEnd={handleMouseUp}
       >
-        {/* Группа с инверсией и компенсацией смещения */}
+        {/* Группа с инверсией и ВРЕМЕННЫМ смещением */}
         {layers?.map((layer) => (
           <Layer key={layer.id}>
             <Group
-              x={flipX ? parentWidth : 0}
-              y={flipY ? parentHeight : 0}
+              x={tempCanvasOffset.x + (flipX ? parentWidth : 0)}
+              y={tempCanvasOffset.y + (flipY ? parentHeight : 0)}
               scaleX={flipX ? -1 : 1}
               scaleY={flipY ? -1 : 1}
             >
@@ -313,7 +371,6 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
               {layer.lines?.map((line, i) => {
                 const brushFunc = SwitchBrush(line.brush || 'default');
 
-                // дефолтная кисть → обычный <Line />
                 if (line.brush === 'default') {
                   return (
                     <Line
