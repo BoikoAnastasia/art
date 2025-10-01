@@ -6,12 +6,14 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import { StyledButtonTopSidebar, StyledIconButton, StyledMenu } from '../../StyledComponents';
 import { useFlip } from '../../contexts/FlipContext';
+import { useLayers } from '../../contexts/LayersContext';
 
 export const TopSidebar = () => {
   const [anchorElFile, setAnchorElFile] = useState<null | HTMLElement>(null);
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
 
   const { setFlipX, setFlipY, flipX, flipY } = useFlip();
+  const { undo, redo, canUndo, canRedo } = useLayers();
 
   const openFile = Boolean(anchorElFile);
   const openEdit = Boolean(anchorElEdit);
@@ -103,10 +105,10 @@ export const TopSidebar = () => {
         <StyledIconButton onClick={() => setFlipY(!flipY)}>
           <SwapVertIcon />
         </StyledIconButton>
-        <StyledIconButton>
+        <StyledIconButton onClick={() => undo()} disabled={!canUndo}>
           <UndoIcon />
         </StyledIconButton>
-        <StyledIconButton>
+        <StyledIconButton onClick={() => redo()} disabled={!canRedo}>
           <RedoIcon />
         </StyledIconButton>
       </Toolbar>

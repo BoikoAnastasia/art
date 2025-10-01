@@ -26,8 +26,6 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const { size } = useSize();
   const { size: opacity } = useOpacity();
   const { tool, setTool } = useTool();
-  const { layers, activeLayerId, updateLayer } = useLayers();
-  const activeLayer = layers.find((l) => l.id === activeLayerId);
 
   // state
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
@@ -47,6 +45,9 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const { flipX, flipY } = useFlip();
   // brush
   const { brush } = useBrush();
+  // layers
+  const { layers, activeLayerId, updateLayer, commit } = useLayers();
+  const activeLayer = layers.find((l) => l.id === activeLayerId);
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -133,7 +134,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         points: [logicalPos],
         brushState: {},
       };
-      updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapes);
+      updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapes, { commit: false });
       return;
     }
 
@@ -218,7 +219,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       }
 
       points.push(logicalPos);
-      updateLayer(updatedLines, activeLayer.filledShapes);
+      updateLayer(updatedLines, activeLayer.filledShapes, { commit: false });
     }
   };
 
@@ -229,6 +230,9 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       // Применяем смещение ко всем слоям
       applyCanvasOffsetToLayers();
       isMovingCanvas.current = false;
+    }
+    if (isDrawing.current) {
+      commit();
     }
     isDrawing.current = false;
   };

@@ -45,7 +45,10 @@ export type LayersContextType = {
   addLayer: (name?: string) => void;
   removeLayer: (id: string) => void;
   clearActiveLayer: () => void;
-  updateLayer: (lines: any[], filledShapes: any[]) => void;
+  updateLayer: (lines: any[], filledShapes: any[], opts?: { commit?: boolean }) => void;
+  undo: () => void; redo: () => void;
+  canUndo: boolean; 
+  canRedo: boolean;
 };
 
 export type SizeContextType = {
