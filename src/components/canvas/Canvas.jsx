@@ -9,7 +9,8 @@ import { useLasso } from '../../tools/useLasso';
 import { useFill } from '../../tools/useFill';
 import { useLayers } from '../../contexts/LayersContext';
 import { useFlip } from '../../contexts/FlipContext';
-import { calligraphyBrush } from '../../brush/calligraphyBrush';
+import { useBrush } from '../../contexts/BrushContext';
+import { SwitchBrush } from '../../utils/switchBrush';
 
 export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
   const stageRef = useRef(null);
@@ -39,9 +40,10 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     handleMouseUp: handleLassoUp,
   } = useLasso(tool);
   const { filledShapes, fillAtPoint } = useFill();
-
   // flip
   const { flipX, flipY } = useFlip();
+  // brush
+  const { brush } = useBrush();
 
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
@@ -113,15 +115,16 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     // логическая позиция для записи в слои (компенсация flip)
     const logicalPos = toLogicalPos(pos);
 
-    if (tool === 'calligraphy') {
+    if (tool === 'pen') {
       isDrawing.current = true;
       const newStroke = {
-        tool: 'calligraphy',
+        tool: 'pen',
+        brush,
         size,
         color,
         opacity: opacity / 100,
         points: [logicalPos],
-        brushState: {}, // инициализация
+        brushState: {},
       };
       updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapesLayer);
       return;
@@ -184,42 +187,30 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
     // логическая позиция для записи в данные слоя
     const logicalPos = toLogicalPos(pos);
 
-    if (tool === 'calligraphy') {
+    if (tool === 'pen') {
       const updatedLines = [...activeLayer.lines];
       const lastStroke = updatedLines[updatedLines.length - 1];
-      if (lastStroke && lastStroke.tool === 'calligraphy') {
-        const points = lastStroke.points;
-        if (!points || points.length === 0) return; // <-- защита от undefined
+      if (!lastStroke) return;
 
-        const prevPoint = points[points.length - 1];
-        const brushState = lastStroke.brushState || {};
+      const points = lastStroke.points;
+      if (!points || points.length === 0) return;
 
-        // рисуем на canvas
-        const stage = stageRef.current.getStage();
-        if (stage) {
-          const ctx = stage.toCanvas().getContext('2d');
-          if (ctx && prevPoint && logicalPos) {
-            lastStroke.brushState = calligraphyBrush({
-              ctx,
-              start: prevPoint,
-              end: logicalPos,
-              color: lastStroke.color,
-              size: lastStroke.size,
-              state: brushState,
-            });
-          }
-        }
+      const prevPoint = points[points.length - 1];
+      const brushFunc = SwitchBrush(brush);
+      const brushState = lastStroke.brushState || {};
 
-        points.push(logicalPos);
-        updateLayer(updatedLines, activeLayer.filledShapesLayer);
+      const ctx = stageRef.current.getStage().toCanvas().getContext('2d');
+      if (ctx && prevPoint && logicalPos) {
+        lastStroke.brushState = brushFunc(ctx, {
+          start: prevPoint,
+          end: logicalPos,
+          color: lastStroke.color,
+          size: lastStroke.size,
+          state: brushState,
+        });
       }
-      return;
-    }
 
-    const updatedLines = [...activeLayer.lines];
-    const lastLine = updatedLines[updatedLines.length - 1];
-    if (lastLine) {
-      lastLine.points = lastLine.points.concat([logicalPos.x, logicalPos.y]);
+      points.push(logicalPos);
       updateLayer(updatedLines, activeLayer.filledShapesLayer);
     }
   };
@@ -312,56 +303,49 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
               )}
 
               {layer.lines?.map((line, i) => {
-                if (line.tool === 'calligraphy') {
+                const brushFunc = SwitchBrush(line.brush || 'default');
+
+                // дефолтная кисть → обычный <Line />
+                if (line.brush === 'default') {
                   return (
-                    <Shape
+                    <Line
                       key={i}
-                      sceneFunc={(ctx, shape) => {
-                        ctx.save();
-                        ctx.globalAlpha = line.opacity;
-
-                        let brushState = line.brushState || {};
-
-                        for (let j = 1; j < line.points.length; j++) {
-                          const start = line.points[j - 1];
-                          const end = line.points[j];
-
-                          // защита от undefined
-                          if (!start || !end || start.x == null || start.y == null || end.x == null || end.y == null)
-                            continue;
-
-                          brushState = calligraphyBrush({
-                            ctx,
-                            start,
-                            end,
-                            color: line.color,
-                            size: line.size,
-                            ...brushState,
-                          });
-                        }
-
-                        ctx.restore();
-                        ctx.fillStrokeShape(shape);
-                      }}
+                      points={line.points.flatMap((p) =>
+                        typeof p === 'object' && p !== null && 'x' in p ? [p.x, p.y] : p
+                      )}
+                      stroke={line.color}
+                      strokeWidth={line.size}
+                      tension={0.5}
+                      opacity={line.tool === 'eraser' ? 1 : line.opacity}
+                      lineCap="round"
+                      lineJoin="round"
+                      globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                      perfectDrawEnabled={false}
                     />
                   );
                 }
-
-                // fallback для обычной линии
                 return (
-                  <Line
+                  <Shape
                     key={i}
-                    points={line.points.flatMap((p) =>
-                      typeof p === 'object' && p !== null && 'x' in p ? [p.x, p.y] : p
-                    )}
-                    stroke={line.color}
-                    strokeWidth={line.size}
-                    tension={0.5}
-                    opacity={line.tool === 'eraser' ? 1 : line.opacity}
-                    lineCap="round"
-                    lineJoin="round"
-                    globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-                    perfectDrawEnabled={false}
+                    sceneFunc={(ctx, shape) => {
+                      ctx.save();
+                      ctx.globalAlpha = line.opacity;
+                      for (let j = 1; j < line.points.length; j++) {
+                        const start = line.points[j - 1];
+                        const end = line.points[j];
+                        if (!start || !end) continue;
+                        brushFunc(ctx, {
+                          start,
+                          end,
+                          color: line.color,
+                          size: line.size,
+                          state: {}, // без динамики
+                        });
+                      }
+
+                      ctx.restore();
+                      ctx.fillStrokeShape(shape);
+                    }}
                   />
                 );
               })}

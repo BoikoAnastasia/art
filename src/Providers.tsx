@@ -5,6 +5,7 @@ import { OpacityContextProvider } from './contexts/OpacityContext';
 import { ToolsProvider } from './contexts/ToolsContext';
 import { LayersProvider } from './contexts/LayersContext';
 import { FlipProvider } from './contexts/FlipContext';
+import { BrushProvider } from './contexts/BrushContext';
 
 const providers = [
   ColorProvider,
@@ -13,6 +14,7 @@ const providers = [
   ToolsProvider,
   LayersProvider,
   FlipProvider,
+  BrushProvider,
 ];
 
 export const Providers: FC<{ children: ReactNode }> = ({ children }: { children: any }) => {

@@ -1,14 +1,14 @@
 import { createContext, useContext, useState } from 'react';
-import { Tool, ToolshContextType } from '../types/share';
+import { Tool, ToolsContextType } from '../types/share';
 
 // TODO move, lasso, fill, sensetive, shape, add brush,
 // top icons, crop, format, highlight
 // save, load, etc
 
-const ToolsContext = createContext<ToolshContextType | undefined>(undefined);
+const ToolsContext = createContext<ToolsContextType | undefined>(undefined);
 
 export const ToolsProvider = ({ children }: { children: any }) => {
-  const [tool, setTool] = useState<Tool>('calligraphy');
+  const [tool, setTool] = useState<Tool>('pen');
   return <ToolsContext.Provider value={{ tool, setTool }}>{children}</ToolsContext.Provider>;
 };
 

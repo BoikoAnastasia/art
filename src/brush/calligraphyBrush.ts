@@ -1,25 +1,6 @@
-// calligraphyBrush.ts
-export type Point = { x: number; y: number };
+import { CalligraphyBrushProps, CalligraphyBrushState } from '../types/share';
 
-export type CalligraphyBrushState = {
-  lastTime?: number;
-  lastSpeed?: number;
-  lastAngle?: number;
-  lastSize?: number;
-};
-
-export type CalligraphyBrushProps = {
-  ctx: CanvasRenderingContext2D;
-  start: Point;
-  end: Point;
-  color: string;
-  size: number;
-  state?: CalligraphyBrushState;
-  smoothingFactor?: number;
-};
-
-export const calligraphyBrush = ({
-  ctx,
+export const calligraphyBrush = (ctx: CanvasRenderingContext2D,{
   start,
   end,
   color,
