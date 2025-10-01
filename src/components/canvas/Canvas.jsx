@@ -126,7 +126,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
         points: [logicalPos],
         brushState: {},
       };
-      updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapesLayer);
+      updateLayer([...activeLayer.lines, newStroke], activeLayer.filledShapes);
       return;
     }
 
@@ -155,7 +155,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
 
     isDrawing.current = true;
     const newLine = { tool, size, color, opacity: opacity / 100, points: [logicalPos.x, logicalPos.y] };
-    updateLayer([...activeLayer.lines, newLine], activeLayer.filledShapesLayer);
+    updateLayer([...activeLayer.lines, newLine], activeLayer.filledShapes);
   };
 
   const handleMouseMove = (e) => {
@@ -211,7 +211,7 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
       }
 
       points.push(logicalPos);
-      updateLayer(updatedLines, activeLayer.filledShapesLayer);
+      updateLayer(updatedLines, activeLayer.filledShapes);
     }
   };
 
@@ -294,11 +294,19 @@ export const Canvas = ({ parentWidth, parentHeight, parentContainerRef }) => {
               scaleX={flipX ? -1 : 1}
               scaleY={flipY ? -1 : 1}
             >
-              {layer.filledShapesLayer?.map((shape, i) =>
+              {layer.filledShapes?.map((shape, i) =>
                 shape.closed ? (
-                  <Line key={i} points={shape.points} fill={shape.fill} closed />
+                  <Line key={i} points={shape.points} fill={shape.fill} closed strokeEnabled={false} />
                 ) : (
-                  <Rect key={i} x={0} y={0} width={parentWidth} height={parentHeight} fill={shape.fill} />
+                  <Rect
+                    key={i}
+                    x={0}
+                    y={0}
+                    width={parentWidth}
+                    height={parentHeight}
+                    fill={shape.fill}
+                    strokeEnabled={false}
+                  />
                 )
               )}
 

@@ -1,41 +1,28 @@
-import { useState } from 'react';
+import { useLayers } from '../contexts/LayersContext';
 import { pointInsidePolygon } from '../utils/PointInsidePolygon';
 import { FilledShape } from '../types/share';
 
 export const useFill = () => {
-  const [filledShapes, setFilledShapes] = useState<FilledShape[]>([]);
+  const { layers, activeLayerId, updateLayer } = useLayers();
+  const activeLayer = layers.find((l) => l.id === activeLayerId);
 
   const fillAtPoint = (
     clickPos: { x: number; y: number },
     color: string,
     lassoPoints: number[] = []
   ) => {
-    // Если есть лассо и клик внутри него
+    if (!activeLayer) return;
+
+    let newShape: FilledShape;
     if (lassoPoints.length > 0 && pointInsidePolygon(clickPos, lassoPoints)) {
-      setFilledShapes((prev) => [
-        ...prev,
-        { points: [...lassoPoints], fill: color, closed: true },
-      ]);
+      newShape = { points: [...lassoPoints], fill: color, closed: true };
     } else {
-      // Обычная заливка по холсту: создаем большой Rect
-      setFilledShapes((prev) => [
-        ...prev,
-        {
-          points: [0, 0], // можно будет рисовать Rect отдельно
-          fill: color,
-          closed: false,
-        },
-      ]);
+      newShape = { points: [0, 0], fill: color, closed: false };
     }
+
+    const updatedShapes = [...(activeLayer.filledShapes || []), newShape];
+    updateLayer(activeLayer.lines, updatedShapes);
   };
 
-  const clearFill = () => {
-    setFilledShapes([]);
-  };
-
-  return {
-    filledShapes,
-    fillAtPoint,
-    clearFill,
-  };
+  return { fillAtPoint };
 };
