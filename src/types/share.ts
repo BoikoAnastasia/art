@@ -94,7 +94,7 @@ export type CalligraphyBrushProps = {
 };
 
 export type BrushDefaultProps = {
-  ctx: CanvasRenderingContext2D;
+  ctx?: CanvasRenderingContext2D;
   start: Point;
   end: Point;
   color: string;
@@ -104,3 +104,53 @@ export type BrushDefaultProps = {
 export type DripBrushState = {
   drips: { x: number; y: number; size: number }[];
 };
+
+// hooks
+export type useCanvasZoomType = {
+  scale: number, 
+  position: Point, 
+  setScale: React.Dispatch<React.SetStateAction<number>>, 
+  setPosition: React.Dispatch<React.SetStateAction<Point>>, 
+  parentContainerRef: React.RefObject<HTMLDivElement | null>
+}
+
+export type useCanvasDragType = {
+  tool: Tool, 
+  isDraggingContainer: boolean, 
+  setIsDraggingContainer: React.Dispatch<React.SetStateAction<boolean>>, 
+  position: Point, 
+  dragOffset: React.RefObject<Point>, 
+  setPosition: React.Dispatch<React.SetStateAction<Point>>
+}
+
+// renders
+export type CursorRenderType = {
+  hoverPos: Point, 
+  size: number,
+  tool: Tool,
+  color: string
+}
+
+export type LayerRendererType = {
+  layer: LayerType, 
+  tempCanvasOffset: Point, 
+  flipX: boolean, 
+  flipY: boolean, 
+  parentWidth: number, 
+  parentHeight: number, 
+  lassoPoints: number[]
+}
+
+export type UpdateLayerType = (
+  lines?: any[],
+  filledShapes?: any[],
+  opts?: { commit?: boolean }
+) => void;
+
+// utils
+export type ApplyCanvasOffsetToLayersType = {
+  layers: LayerType[], 
+  tempCanvasOffset: Point, 
+  updateLayer: UpdateLayerType, 
+  setTempCanvasOffset: React.Dispatch<React.SetStateAction<Point>>
+}

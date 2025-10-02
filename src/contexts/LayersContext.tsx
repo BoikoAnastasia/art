@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { LayersContextType, LayerType } from '../types/share';
+import { LayersContextType, LayerType, UpdateLayerType } from '../types/share';
 
 let layerCounter = 1;
 
@@ -73,7 +73,7 @@ export const LayersProvider = ({ children }: { children: any }) => {
    * Если opts.commit === false — применяет обновление временно (pending),
    * иначе — добавляет snapshot в историю.
    */
-  const updateLayer = (lines?: any[], filledShapes?: any[], opts: { commit?: boolean } = { commit: true }) => {
+  const updateLayer: UpdateLayerType = (lines, filledShapes, opts = { commit: true }) => {
     if (!activeLayerId) return;
     const base = deepClone(layers);
     const idx = base.findIndex((l: LayerType) => l.id === activeLayerId);
