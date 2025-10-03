@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { useCanvasZoomType } from '../types/share';
 
-export const useCanvasZoom = ({scale, position, setScale, setPosition, parentContainerRef}: useCanvasZoomType) => {
-
+export const useCanvasZoom = ({ scale, position, setScale, setPosition, parentContainerRef }: useCanvasZoomType) => {
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
 
@@ -31,18 +30,18 @@ export const useCanvasZoom = ({scale, position, setScale, setPosition, parentCon
       if (!parentContainerRef || !parentContainerRef.current) return;
       const parentRect = parentContainerRef.current.getBoundingClientRect();
       const isOverParent =
-      e.clientX >= parentRect.left &&
-      e.clientX <= parentRect.right &&
-      e.clientY >= parentRect.top &&
-      e.clientY <= parentRect.bottom;
+        e.clientX >= parentRect.left &&
+        e.clientX <= parentRect.right &&
+        e.clientY >= parentRect.top &&
+        e.clientY <= parentRect.bottom;
       if (isOverParent) handleZoom(e, e.deltaY < 0);
     };
-    
+
     if (!parentContainerRef || !parentContainerRef.current) return;
     const parentContainer = parentContainerRef.current;
     parentContainer.addEventListener('wheel', handleWheel, { passive: false });
     return () => parentContainer.removeEventListener('wheel', handleWheel);
   }, [scale, position, parentContainerRef]);
-  
+
   return {};
-}
+};

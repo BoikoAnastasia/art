@@ -3,6 +3,7 @@ import { useLayers } from '../../contexts/LayersContext';
 import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { StyledButtonLayer, StyledLayersBox, StyledLayersBoxItems } from '../../StyledComponents';
+import { LayerType } from '../../types/share';
 
 export const LayersPanel = () => {
   const { layers, activeLayerId, setActiveLayerId, addLayer, removeLayer } = useLayers();
@@ -10,7 +11,7 @@ export const LayersPanel = () => {
   return (
     <StyledLayersBox>
       <StyledLayersBoxItems>
-        {layers.map((layer: any) => {
+        {layers.map((layer: LayerType) => {
           const isActive = layer.id === activeLayerId;
           const isOnlyOne = layers.length === 1;
 

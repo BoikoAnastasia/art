@@ -17,6 +17,4 @@ const MainPage = lazy(() =>
 //   }))
 // );
 
-export const routers = [
-  { path: '/', Element: MainPage },
-];
+export const routers = [{ path: '/', Element: MainPage }];

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import { Tool, ToolsContextType } from '../types/share';
 
 // TODO move, lasso, fill, sensetive, shape, add brush,
@@ -7,7 +7,7 @@ import { Tool, ToolsContextType } from '../types/share';
 
 const ToolsContext = createContext<ToolsContextType | undefined>(undefined);
 
-export const ToolsProvider = ({ children }: { children: any }) => {
+export const ToolsProvider = ({ children }: { children: ReactNode }) => {
   const [tool, setTool] = useState<Tool>('pen');
   return <ToolsContext.Provider value={{ tool, setTool }}>{children}</ToolsContext.Provider>;
 };

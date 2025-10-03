@@ -2,8 +2,6 @@ import styled from '@emotion/styled';
 import { Box, Button, IconButton, Input, Menu, Slider } from '@mui/material';
 import { IStyledButtonLayer } from './types/share';
 
-
-
 // Slider
 export const StyledSlider = styled(Slider)(() => ({
   flex: 1,
@@ -24,7 +22,7 @@ export const StyledSlider = styled(Slider)(() => ({
       backgroundColor: 'white', // при наведении / фокусе / клике
     },
   },
-}))
+}));
 
 export const StyledInput = styled(Input)(() => ({
   flex: '0 1 42px',
@@ -34,8 +32,8 @@ export const StyledInput = styled(Input)(() => ({
     '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': {
       margin: 0,
     },
-  }
-}))
+  },
+}));
 
 // Layers
 export const StyledLayersBox = styled(Box)(() => ({
@@ -49,7 +47,7 @@ export const StyledLayersBox = styled(Box)(() => ({
   alignItems: 'center',
   zIndex: 4,
   width: 'calc(100% - 250px)',
-}))
+}));
 
 export const StyledLayersBoxItems = styled(Box)(() => ({
   display: 'flex',
@@ -58,7 +56,7 @@ export const StyledLayersBoxItems = styled(Box)(() => ({
   margin: '0 60px',
   whiteSpace: 'nowrap',
   overflowX: 'auto' as const,
-  overflowY: 'hidden'  as const,
+  overflowY: 'hidden' as const,
   '&::-webkit-scrollbar': {
     height: '5px',
   },
@@ -74,11 +72,11 @@ export const StyledLayersBoxItems = styled(Box)(() => ({
   '&::-webkit-scrollbar-thumb:hover': {
     background: '#4c4c4cff',
   },
-}))
+}));
 
 export const StyledButtonLayer = styled(Box, {
   shouldForwardProp: (propName) => propName !== 'isActive',
-})<IStyledButtonLayer>(({isActive}) => ({
+})<IStyledButtonLayer>(({ isActive }) => ({
   display: 'inline-flex',
   gap: '5px',
   alignItems: 'center',
@@ -90,7 +88,7 @@ export const StyledButtonLayer = styled(Box, {
   '&:hover': {
     background: isActive ? '#4c4c4cff' : '#333333',
   },
-}))
+}));
 
 // leftSidebar
 
@@ -119,7 +117,7 @@ export const StyledLeftSideBarBox = styled(Box)(() => ({
   '&::-webkit-scrollbar-thumb:hover': {
     background: '#4c4c4cff',
   },
-}))
+}));
 
 // rightSidebar
 export const StyledRightSideBarBox = styled(Box)(() => ({
@@ -131,7 +129,7 @@ export const StyledRightSideBarBox = styled(Box)(() => ({
   borderLeft: '1px solid #4c4c4cff',
   zIndex: 5,
   padding: '0 16px',
-}))
+}));
 
 export const StyledButtonTopSidebar = styled(Button)(() => ({
   display: 'inline-flex',
@@ -143,22 +141,21 @@ export const StyledButtonTopSidebar = styled(Button)(() => ({
   minWidth: '80px',
   textTransform: 'none' as const,
   '&:hover': {
-    background: '#4c4c4cff'
+    background: '#4c4c4cff',
   },
-  '&.MuiButton-root':{
-    borderRadius: 0, 
-  }
-}))
+  '&.MuiButton-root': {
+    borderRadius: 0,
+  },
+}));
 
 export const StyledIconButton = styled(IconButton)(() => ({
   background: 'transparent',
   color: 'white',
   borderRadius: 0,
   '&:hover': {
-    background: '#4c4c4cff'
+    background: '#4c4c4cff',
   },
-}))
-
+}));
 
 export const StyledMenu = styled(Menu)(() => ({
   '& .MuiMenu-paper': {
@@ -175,4 +172,4 @@ export const StyledMenu = styled(Menu)(() => ({
       color: '#dadadaff', // текст при наведении
     },
   },
-}))
+}));

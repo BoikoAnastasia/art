@@ -1,9 +1,9 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import { Brush, BrushContextType } from '../types/share';
 
 const BrushContext = createContext<BrushContextType | undefined>(undefined);
 
-export const BrushProvider = ({ children }: { children: any }) => {
+export const BrushProvider = ({ children }: { children: ReactNode }) => {
   const [brush, setBrush] = useState<Brush>('pen');
   return <BrushContext.Provider value={{ brush, setBrush }}>{children}</BrushContext.Provider>;
 };

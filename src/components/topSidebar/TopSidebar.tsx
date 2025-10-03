@@ -12,7 +12,7 @@ export const TopSidebar = () => {
   const [anchorElFile, setAnchorElFile] = useState<null | HTMLElement>(null);
   const [anchorElEdit, setAnchorElEdit] = useState<null | HTMLElement>(null);
 
-  const { setFlipX, setFlipY, flipX, flipY } = useFlip();
+  const { setFlip } = useFlip();
   const { undo, redo, canUndo, canRedo } = useLayers();
 
   const openFile = Boolean(anchorElFile);
@@ -30,6 +30,10 @@ export const TopSidebar = () => {
   };
   const handleCloseEdit = () => {
     setAnchorElEdit(null);
+  };
+
+  const toggleFlip = (key: 'flipX' | 'flipY') => {
+    setFlip((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
@@ -99,10 +103,10 @@ export const TopSidebar = () => {
         </Box>
 
         {/* Иконки */}
-        <StyledIconButton onClick={() => setFlipX(!flipX)}>
+        <StyledIconButton onClick={() => toggleFlip('flipX')}>
           <SwapHorizIcon />
         </StyledIconButton>
-        <StyledIconButton onClick={() => setFlipY(!flipY)}>
+        <StyledIconButton onClick={() => toggleFlip('flipY')}>
           <SwapVertIcon />
         </StyledIconButton>
         <StyledIconButton onClick={() => undo()} disabled={!canUndo}>

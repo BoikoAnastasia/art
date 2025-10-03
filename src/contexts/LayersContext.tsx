@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 import { LayersContextType, LayerType, UpdateLayerType } from '../types/share';
 
 let layerCounter = 1;
@@ -6,9 +6,9 @@ let layerCounter = 1;
 const LayersContext = createContext<LayersContextType | undefined>(undefined);
 
 // Вспомогательный глубокий клон
-const deepClone = (v: any) => JSON.parse(JSON.stringify(v));
+const deepClone = (v: LayerType[]) => JSON.parse(JSON.stringify(v));
 
-export const LayersProvider = ({ children }: { children: any }) => {
+export const LayersProvider = ({ children }: { children: ReactNode }) => {
   const initialLayers: LayerType[] = [{ id: 'layer-1', name: 'Слой 1', lines: [], filledShapes: [] }];
 
   // История представлена массивом снимков состояний слоёв
@@ -84,6 +84,7 @@ export const LayersProvider = ({ children }: { children: any }) => {
       lines: typeof lines !== 'undefined' ? lines : base[idx].lines,
       filledShapes: typeof filledShapes !== 'undefined' ? filledShapes : base[idx].filledShapes,
     } as LayerType;
+    console.log(updated);
 
     base[idx] = updated;
 

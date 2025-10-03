@@ -3,8 +3,15 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { StyledInput, StyledSlider } from '../../StyledComponents';
+import { SizeContextType } from '../../types/share';
 
-export const CustomeSlider = ({ title, useValueContext }: { title: string; useValueContext: any }) => {
+export const CustomeSlider = ({
+  title,
+  useValueContext,
+}: {
+  title: string;
+  useValueContext: () => SizeContextType;
+}) => {
   const { size, setSize } = useValueContext();
 
   const handleSliderChange = (event: Event | React.SyntheticEvent, newValue: number | number[]) => {

@@ -7,8 +7,8 @@ export const useLasso = (tool: string) => {
   const isDrawing = useRef(false);
   // перетаскиваем ли готовое лассо
   const isDragging = useRef(false);
-  // определяем клик/драг 
-  const hasMoved = useRef(false);         
+  // определяем клик/драг
+  const hasMoved = useRef(false);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
 
   const handleMouseDown = (pos: { x: number; y: number }) => {
@@ -42,9 +42,7 @@ export const useLasso = (tool: string) => {
     } else if (isDragging.current && dragStart.current) {
       const dx = pos.x - dragStart.current.x;
       const dy = pos.y - dragStart.current.y;
-      setLassoPoints((prev) =>
-        prev.map((v, i) => (i % 2 === 0 ? v + dx : v + dy))
-      );
+      setLassoPoints((prev) => prev.map((v, i) => (i % 2 === 0 ? v + dx : v + dy)));
       dragStart.current = pos;
     }
   };

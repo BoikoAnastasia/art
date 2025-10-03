@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react';
+import React, { ReactNode, ReactElement, FC } from 'react';
 import { ColorProvider } from './contexts/ColorContext';
 import { SizeBrushProvider } from './contexts/SizeContext';
 import { OpacityContextProvider } from './contexts/OpacityContext';
@@ -7,7 +7,10 @@ import { LayersProvider } from './contexts/LayersContext';
 import { FlipProvider } from './contexts/FlipContext';
 import { BrushProvider } from './contexts/BrushContext';
 
-const providers = [
+// Каждый провайдер ожидает children как ReactNode (обязателен)
+type ProviderComponent = React.ComponentType<{ children: ReactNode }>;
+
+const providers: ProviderComponent[] = [
   ColorProvider,
   SizeBrushProvider,
   OpacityContextProvider,
@@ -17,8 +20,13 @@ const providers = [
   BrushProvider,
 ];
 
-export const Providers: FC<{ children: ReactNode }> = ({ children }: { children: any }) => {
-  return providers.reduceRight((acc, Provider) => {
-    return <Provider>{acc}</Provider>;
-  }, children);
+export const Providers: FC<{ children: ReactNode }> = ({ children }) => {
+  // начальное значение — ReactElement (фрагмент), поэтому аккумулятор всегда ReactElement | null
+  const tree = providers.reduceRight<ReactElement | null>(
+    (acc, Provider) => {
+      return <Provider>{acc}</Provider>;
+    },
+    <>{children}</>
+  );
+  return tree;
 };

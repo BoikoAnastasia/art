@@ -1,9 +1,9 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import { SizeContextType } from '../types/share';
 
 const OpacityContext = createContext<SizeContextType | undefined>(undefined);
 
-export const OpacityContextProvider = ({ children }: { children: any }) => {
+export const OpacityContextProvider = ({ children }: { children: ReactNode }) => {
   const [size, setSize] = useState(100);
   return <OpacityContext.Provider value={{ size, setSize }}>{children}</OpacityContext.Provider>;
 };

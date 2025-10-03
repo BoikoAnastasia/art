@@ -3,14 +3,7 @@ import { CalligraphyBrushProps, CalligraphyBrushState } from '../types/share';
 
 export const foamBrush = (
   ctx: CanvasRenderingContext2D,
-  {
-    start,
-    end,
-    color,
-    size,
-    state = {},
-    smoothingFactor = 0.4,
-  }: CalligraphyBrushProps
+  { start, end, color, size, state = {}, smoothingFactor = 0.4 }: CalligraphyBrushProps
 ): CalligraphyBrushState => {
   const now = performance.now();
   const dt = now - (state.lastTime ?? now);
@@ -78,7 +71,7 @@ export const foamBrush = (
     const cy = start.y + dy * t;
 
     // spread perpendicular and along direction for natural spray
-    const spread = (rand() - 0.5) * dynamicSize * 2 * (1 - t) + (rand() * dynamicSize * 0.5);
+    const spread = (rand() - 0.5) * dynamicSize * 2 * (1 - t) + rand() * dynamicSize * 0.5;
     const along = (rand() - 0.6) * dynamicSize * 0.4; // slight shift along line
     const x = cx + px * spread + ux * along;
     const y = cy + py * spread + uy * along;

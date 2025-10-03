@@ -1,18 +1,14 @@
 import { useLayers } from '../contexts/LayersContext';
 import { pointInsidePolygon } from '../utils/PointInsidePolygon';
-import { FilledShape } from '../types/share';
+import { FilledShape, Point } from '../types/share';
 
 export const useFill = () => {
   const { layers, activeLayerId, updateLayer } = useLayers();
   const activeLayer = layers.find((l) => l.id === activeLayerId);
 
-  const fillAtPoint = (
-    clickPos: { x: number; y: number },
-    color: string,
-    lassoPoints: number[] = []
-  ) => {
+  const fillAtPoint = (clickPos: Point, color: string, lassoPoints: number[] = []) => {
     if (!activeLayer) return;
-
+    console.log(clickPos, lassoPoints);
     let newShape: FilledShape;
     if (lassoPoints.length > 0 && pointInsidePolygon(clickPos, lassoPoints)) {
       newShape = { points: [...lassoPoints], fill: color, closed: true };

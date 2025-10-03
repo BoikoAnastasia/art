@@ -1,13 +1,9 @@
 import { CalligraphyBrushProps, CalligraphyBrushState } from '../types/share';
 
-export const calligraphyBrush = (ctx: CanvasRenderingContext2D,{
-  start,
-  end,
-  color,
-  size,
-  state = {},
-  smoothingFactor = 0.4,
-}: CalligraphyBrushProps): CalligraphyBrushState => {
+export const calligraphyBrush = (
+  ctx: CanvasRenderingContext2D,
+  { start, end, color, size, state = {}, smoothingFactor = 0.4 }: CalligraphyBrushProps
+): CalligraphyBrushState => {
   const now = performance.now();
   const dt = now - (state.lastTime ?? now);
 

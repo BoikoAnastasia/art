@@ -1,25 +1,19 @@
-import { createContext, useContext, useState } from 'react';
-
-type FlipContextType = {
-  flipX: boolean;
-  flipY: boolean;
-  setFlipX: (b: boolean) => void;
-  setFlipY: (b: boolean) => void;
-};
+import { createContext, ReactNode, useContext, useState } from 'react';
+import { Flip, FlipContextType } from '../types/share';
 
 const FlipContext = createContext<FlipContextType | undefined>(undefined);
 
-export const FlipProvider = ({ children }: { children: any }) => {
-  const [flipX, setFlipX] = useState(false);
-  const [flipY, setFlipY] = useState(false);
+export const FlipProvider = ({ children }: { children: ReactNode }) => {
+  const [flip, setFlip] = useState<Flip>({
+    flipX: false,
+    flipY: false,
+  });
 
   return (
     <FlipContext.Provider
       value={{
-        flipX,
-        setFlipX,
-        flipY,
-        setFlipY,
+        flip,
+        setFlip,
       }}
     >
       {children}

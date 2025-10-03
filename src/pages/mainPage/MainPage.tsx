@@ -6,6 +6,7 @@ import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
 import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
 import { LayersPanel } from '../../components/layersPanel/LayersPanel';
 import { TopSidebar } from '../../components/topSidebar/TopSidebar';
+import { canvasParentSizeType } from '../../types/share';
 
 // icons
 
@@ -14,9 +15,11 @@ import { TopSidebar } from '../../components/topSidebar/TopSidebar';
 // import DeleteIcon from '@mui/icons-material/Delete';
 
 export const MainPage = () => {
-  const [canvasWidth, setCanvasWidth] = useState(800); // Начальная ширина холста
-  const [canvasHeight, setCanvasHeight] = useState(600); // Начальная высота холста
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const [canvasParentSize, setCanvasParentSize] = useState<canvasParentSizeType>({
+    width: 800,
+    height: 600,
+  });
 
   // Функция для обновления размера контейнера холста
   const updateCanvasContainerSize = () => {
@@ -67,7 +70,7 @@ export const MainPage = () => {
             justifyContent: 'center',
           }}
         >
-          <Canvas parentWidth={canvasWidth} parentHeight={canvasHeight} parentContainerRef={canvasContainerRef} />
+          <Canvas canvasParentSize={canvasParentSize} parentContainerRef={canvasContainerRef} />
         </Box>
 
         {/* Правое меню */}

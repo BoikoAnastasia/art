@@ -2,24 +2,16 @@ import { Group, Layer, Line, Rect, Shape } from 'react-konva';
 import { SwitchBrush } from '../utils/switchBrush';
 import { LayerRendererType, Point } from '../types/share';
 
-export const LayerRenderer = ({
-  layer,
-  tempCanvasOffset,
-  flipX,
-  flipY,
-  parentWidth,
-  parentHeight,
-  lassoPoints,
-}: LayerRendererType) => {
+export const LayerRenderer = ({ layer, tempCanvasOffset, flip, parent, lassoPoints }: LayerRendererType) => {
   return (
     <Layer>
       <Group
-        x={tempCanvasOffset.x + (flipX ? parentWidth : 0)}
-        y={tempCanvasOffset.y + (flipY ? parentHeight : 0)}
-        scaleX={flipX ? -1 : 1}
-        scaleY={flipY ? -1 : 1}
+        x={tempCanvasOffset.x + (flip.flipX ? parent.width : 0)}
+        y={tempCanvasOffset.y + (flip.flipY ? parent.height : 0)}
+        scaleX={flip.flipX ? -1 : 1}
+        scaleY={flip.flipY ? -1 : 1}
       >
-        {layer.filledShapes?.map((shape, i: number) =>
+        {layer.filledShapes?.map((shape: any, i: number) =>
           shape.closed ? (
             <Line key={i} points={shape.points} fill={shape.fill} closed strokeEnabled={false} />
           ) : (
@@ -27,8 +19,8 @@ export const LayerRenderer = ({
               key={i}
               x={0}
               y={0}
-              width={parentWidth}
-              height={parentHeight}
+              width={parent.width}
+              height={parent.height}
               fill={shape.fill}
               strokeEnabled={false}
             />
