@@ -14,6 +14,7 @@ export const RightSideBar = () => {
       name: 'Карандаш',
     },
     { id: 'calligraphy', name: 'Калиграфическая кисть' },
+    { id: 'blur', name: 'Блюр' },
     // { id: 'drip', name: 'Мокрая кисть' }, // TODO эта кисть не работает
     // { id: 'foam', name: 'Мыльная кисть' }, // TODO эта кисть не работает
   ];

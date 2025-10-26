@@ -1,7 +1,9 @@
 import { useRef } from 'react';
-import { LayerType, Point, useDrawingToolType } from '../types/share';
+// utils
 import { toLogicalPos } from '../utils/position';
 import { SwitchBrush } from '../utils/switchBrush';
+// types
+import { LayerType, Point, UseDrawingToolType } from '../types/share';
 
 export const useDrawingTool = ({
   tool,
@@ -14,7 +16,7 @@ export const useDrawingTool = ({
   stageRef,
   updateLayer,
   commit,
-}: useDrawingToolType) => {
+}: UseDrawingToolType) => {
   const isDrawing = useRef(false);
   const startDrawing = (pos: Point, activeLayer: LayerType) => {
     if (!activeLayer) return;

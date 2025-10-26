@@ -1,6 +1,9 @@
+// konva
 import { KonvaEventObject } from 'konva/lib/Node';
-import { useCanvasHandlersType } from '../types/share';
+// utils
 import { toLogicalPos, getStagePosFromClient } from '../utils/position';
+// types
+import { UseCanvasHandlersType } from '../types/share';
 
 // Вспомогательная функция для получения клиентских координат из события
 const getClientCoordinates = (evt: MouseEvent | TouchEvent) => {
@@ -36,7 +39,7 @@ export const useCanvasHandlers = ({
   commit,
   color,
   setTempCanvasOffset,
-}: useCanvasHandlersType) => {
+}: UseCanvasHandlersType) => {
   const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const stage = e.target.getStage();
     if (!stage) return;
@@ -70,11 +73,13 @@ export const useCanvasHandlers = ({
   const handleMouseMove = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const client = getClientCoordinates(e.evt);
     const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
-    setHoverPos(visualPos);
+
+    // Передаем ВИЗУАЛЬНЫЕ координаты для курсора
+    setHoverPos(visualPos); // <- это должно быть visualPos, а не logicalPos
 
     const stage = e.target.getStage();
     if (!stage) return;
-    const pos = stage.getPointerPosition();
+    const pos = stage.getPointerPosition(); // <- это визуальные координаты Stage
     if (!pos) return;
 
     if (tool === 'move') {
@@ -85,12 +90,15 @@ export const useCanvasHandlers = ({
     }
 
     if (tool === 'pen' || tool === 'eraser') {
-      useDrawing.continueDrawing(pos, activeLayer);
+      // Преобразуем визуальные в логические для рисования
+      const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+      useDrawing.continueDrawing(logicalPos, activeLayer);
       return;
     }
 
     if (tool === 'lasso') {
-      useLasso.handleMouseMove(toLogicalPos(pos, flip, canvasParentSize));
+      const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+      useLasso.handleMouseMove(logicalPos);
       return;
     }
   };

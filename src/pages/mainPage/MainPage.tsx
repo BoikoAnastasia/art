@@ -6,7 +6,7 @@ import { RightSideBar } from '../../components/rightSideBar/RightSideBar';
 import { LeftSideBar } from '../../components/leftSideBar/LeftSideBar';
 import { LayersPanel } from '../../components/layersPanel/LayersPanel';
 import { TopSidebar } from '../../components/topSidebar/TopSidebar';
-import { canvasParentSizeType } from '../../types/share';
+import { СanvasParentSizeType } from '../../types/share';
 
 // icons
 
@@ -16,7 +16,7 @@ import { canvasParentSizeType } from '../../types/share';
 
 export const MainPage = () => {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-  const [canvasParentSize, setCanvasParentSize] = useState<canvasParentSizeType>({
+  const [canvasParentSize, setCanvasParentSize] = useState<СanvasParentSizeType>({
     width: 800,
     height: 600,
   });

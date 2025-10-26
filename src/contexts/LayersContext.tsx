@@ -16,6 +16,12 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
   const [index, setIndex] = useState<number>(0);
   const [pending, setPending] = useState<LayerType[] | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string>(initialLayers[0].id);
+  const [selection, setSelection] = useState<null | {
+    layerId: string;
+    paths: any[];
+    x: number;
+    y: number;
+  }>(null);
 
   // Настройки
   const HISTORY_LIMIT = 100;
@@ -84,7 +90,6 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
       lines: typeof lines !== 'undefined' ? lines : base[idx].lines,
       filledShapes: typeof filledShapes !== 'undefined' ? filledShapes : base[idx].filledShapes,
     } as LayerType;
-    console.log(updated);
 
     base[idx] = updated;
 
@@ -128,8 +133,10 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
       redo,
       canUndo,
       canRedo,
+      selection,
+      setSelection,
     }),
-    [layers, activeLayerId, history, index, pending, canUndo, canRedo]
+    [layers, activeLayerId, history, index, pending, canUndo, canRedo, selection]
   );
 
   // Приведение к типу, чтобы не ломать существующий контракт типов —

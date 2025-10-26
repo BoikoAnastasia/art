@@ -19,7 +19,7 @@ export type Tool =
   | 'transparency'
   | 'calligraphy';
 
-export type Brush = 'pen' | 'calligraphy' | 'drip' | 'foam';
+export type Brush = 'pen' | 'calligraphy' | 'drip' | 'foam' | 'blur';
 
 export type Flip = {
   flipX: boolean;
@@ -31,7 +31,7 @@ export type FlipContextType = {
   setFlip: React.Dispatch<React.SetStateAction<Flip>>;
 };
 
-export type canvasParentSizeType = {
+export type СanvasParentSizeType = {
   width: number;
   height: number;
 };
@@ -40,8 +40,21 @@ export type ColorContextType = {
   color: string;
   setColor: (c: string) => void;
 };
+export type FilledShapesType = {
+  closed: boolean;
+  fill: string;
+  points: Point[] | number[];
+};
+
+export type SelectionType = {
+  layerId: string;
+  lines: LineType[];
+  x: number;
+  y: number;
+};
 
 export type LineType = {
+  id?: string;
   brush: string;
   brushState: any;
   color: string;
@@ -49,6 +62,7 @@ export type LineType = {
   points: Point[];
   size: number;
   tool: Tool;
+  selections?: SelectionType[];
 };
 
 export type LayerShapeType = {
@@ -57,17 +71,12 @@ export type LayerShapeType = {
   fill: string;
 };
 
-export type FilledShapesType = {
-  closed: boolean;
-  fill: string;
-  points: Point[] | number[];
-};
-
 export type LayerType = {
   id: string;
   name: string;
   lines: LineType[];
-  filledShapes: FilledShapesType[];
+  filledShapes: FilledShape[];
+  selections?: SelectionType[];
 };
 
 export type LayersContextType = {
@@ -77,12 +86,14 @@ export type LayersContextType = {
   addLayer: (name?: string) => void;
   removeLayer: (id: string) => void;
   clearActiveLayer: () => void;
-  updateLayer: (lines: LineType[], filledShapes: FilledShapesType[], opts?: { commit?: boolean }) => void;
+  updateLayer: (lines: LineType[], filledShapes: any, opts?: { commit?: boolean }) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
   commit: () => void;
+  selection: SelectionType | null;
+  setSelection: (selection: SelectionType | null) => void;
 };
 
 export type SizeContextType = {
@@ -101,19 +112,19 @@ export type BrushContextType = {
 };
 
 export type FilledShape = {
-  points: number[]; // если закрытая область, массив x,y
+  points: number[];
   fill: string;
   closed: boolean;
 };
 
-export type fillAtPointType = {
+export type FillAtPointType = {
   clickPos: Point;
   color: string;
   lassoPoints: number[];
 };
 
 export type CanvasType = {
-  canvasParentSize: canvasParentSizeType;
+  canvasParentSize: СanvasParentSizeType;
   parentContainerRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -150,7 +161,7 @@ export type DripBrushState = {
 };
 
 // hooks
-export type useCanvasZoomType = {
+export type UseCanvasZoomType = {
   scale: number;
   position: Point;
   setScale: React.Dispatch<React.SetStateAction<number>>;
@@ -158,20 +169,20 @@ export type useCanvasZoomType = {
   parentContainerRef: React.RefObject<HTMLDivElement | null>;
 };
 
-export type useDrawingToolType = {
+export type UseDrawingToolType = {
   tool: Tool;
   brush: Brush;
   color: string;
   opacity: number;
   size: number;
   flip: Flip;
-  canvasParentSize: canvasParentSizeType;
+  canvasParentSize: СanvasParentSizeType;
   stageRef: React.RefObject<any>;
   updateLayer: UpdateLayerType;
   commit: () => void;
 };
 
-export type useCanvasTransformType = {
+export type UseCanvasTransformType = {
   tool: Tool;
   layers: LayerType[];
   tempCanvasOffset: Point;
@@ -179,7 +190,7 @@ export type useCanvasTransformType = {
   setTempCanvasOffset: React.Dispatch<React.SetStateAction<Point>>;
 };
 
-export type useCanvasDragType = {
+export type UseCanvasDragType = {
   tool: Tool;
   isDraggingContainer: boolean;
   setIsDraggingContainer: React.Dispatch<React.SetStateAction<boolean>>;
@@ -188,10 +199,10 @@ export type useCanvasDragType = {
   setPosition: React.Dispatch<React.SetStateAction<Point>>;
 };
 
-export type useCanvasHandlersType = {
+export type UseCanvasHandlersType = {
   tool: Tool;
   flip: Flip;
-  canvasParentSize: canvasParentSizeType;
+  canvasParentSize: СanvasParentSizeType;
   parentContainerRef: React.RefObject<HTMLDivElement | null>;
   setHoverPos: React.Dispatch<React.SetStateAction<Point>>;
   useDrawing: any;
@@ -220,7 +231,7 @@ export type LayerRendererType = {
   layer: LayerType;
   tempCanvasOffset: Point;
   flip: Flip;
-  parent: canvasParentSizeType;
+  parent: СanvasParentSizeType;
   lassoPoints: number[];
 };
 

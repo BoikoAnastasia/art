@@ -1,4 +1,5 @@
 import { Circle, Layer } from 'react-konva';
+// types
 import { CursorRenderType } from '../types/share';
 
 export const CursorRender = ({ hoverPos, size, tool, color }: CursorRenderType) => {

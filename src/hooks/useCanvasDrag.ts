@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useCanvasDragType } from '../types/share';
+import { UseCanvasDragType } from '../types/share';
 
 export const useCanvasDrag = ({
   tool,
@@ -8,7 +8,7 @@ export const useCanvasDrag = ({
   position,
   dragOffset,
   setPosition,
-}: useCanvasDragType) => {
+}: UseCanvasDragType) => {
   const handleContainerMouseDown = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (tool !== 'hand') return;
     setIsDraggingContainer(true);

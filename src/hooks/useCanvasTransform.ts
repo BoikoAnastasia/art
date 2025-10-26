@@ -1,6 +1,8 @@
 import { useRef } from 'react';
-import { Point, useCanvasTransformType } from '../types/share';
+// utils
 import { applyCanvasOffsetToLayers } from '../utils/canvasOffset';
+// types
+import { Point, UseCanvasTransformType } from '../types/share';
 
 export const useCanvasTransform = ({
   tool,
@@ -8,7 +10,7 @@ export const useCanvasTransform = ({
   tempCanvasOffset,
   updateLayer,
   setTempCanvasOffset,
-}: useCanvasTransformType) => {
+}: UseCanvasTransformType) => {
   const moveStart = useRef<Point>({ x: 0, y: 0 });
   const isMoving = useRef<boolean>(false);
 

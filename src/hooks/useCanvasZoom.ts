@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { useCanvasZoomType } from '../types/share';
+import { UseCanvasZoomType } from '../types/share';
 
-export const useCanvasZoom = ({ scale, position, setScale, setPosition, parentContainerRef }: useCanvasZoomType) => {
+export const useCanvasZoom = ({ scale, position, setScale, setPosition, parentContainerRef }: UseCanvasZoomType) => {
   const MIN_SCALE = 0.0002;
   const MAX_SCALE = 10000;
 
