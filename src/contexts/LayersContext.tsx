@@ -1,21 +1,33 @@
-import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 import { LayersContextType, LayerType, UpdateLayerType } from '../types/share';
 
 let layerCounter = 1;
 
+type HistorySnapshot = {
+  layers: LayerType[];
+  canvasSize: { width: number; height: number };
+};
+
 const LayersContext = createContext<LayersContextType | undefined>(undefined);
 
-// Вспомогательный глубокий клон
-const deepClone = (v: LayerType[]) => JSON.parse(JSON.stringify(v));
+const deepClone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 
-export const LayersProvider = ({ children }: { children: ReactNode }) => {
+export const LayersProvider = ({
+  children,
+  initialCanvasSize = { width: 800, height: 600 },
+}: {
+  children: ReactNode;
+  initialCanvasSize?: { width: number; height: number };
+}) => {
   const initialLayers: LayerType[] = [{ id: 'layer-1', name: 'Слой 1', lines: [], filledShapes: [] }];
 
-  // История представлена массивом снимков состояний слоёв
-  const [history, setHistory] = useState<LayerType[][]>(() => [deepClone(initialLayers)]);
-  const [index, setIndex] = useState<number>(0);
+  const [history, setHistory] = useState<HistorySnapshot[]>([
+    { layers: deepClone(initialLayers), canvasSize: deepClone(initialCanvasSize) },
+  ]);
+
+  const [index, setIndex] = useState(0);
   const [pending, setPending] = useState<LayerType[] | null>(null);
-  const [activeLayerId, setActiveLayerId] = useState<string>(initialLayers[0].id);
+  const [activeLayerId, setActiveLayerId] = useState(initialLayers[0].id);
   const [selection, setSelection] = useState<null | {
     layerId: string;
     paths: any[];
@@ -23,29 +35,33 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
     y: number;
   }>(null);
 
-  // Настройки
   const HISTORY_LIMIT = 100;
 
-  // Текущие видимые слои — pending (во время рисования) или snapshot из истории
-  const layers = pending ?? history[index];
+  const currentSnapshot = history[index];
+  const layers = pending ?? currentSnapshot.layers;
+  const [canvasSize, setCanvasSize] = useState(currentSnapshot.canvasSize);
 
   const canUndo = index > 0;
   const canRedo = index < history.length - 1;
 
-  // Общая функция, которая пушит новое состояние в историю
-  const pushHistory = (newLayers: LayerType[]) => {
+  const pushHistory = (newLayers: LayerType[], newCanvasSize = canvasSize) => {
+    const snapshot: HistorySnapshot = {
+      layers: deepClone(newLayers),
+      canvasSize: deepClone(newCanvasSize),
+    };
+
     const slice = history.slice(0, index + 1);
-    const newHistory = slice.concat([deepClone(newLayers)]);
-    // Обрезаем историю по лимиту
+    const newHistory = slice.concat(snapshot);
     if (newHistory.length > HISTORY_LIMIT) {
-      const excess = newHistory.length - HISTORY_LIMIT;
-      setHistory(newHistory.slice(excess));
-      setIndex(HISTORY_LIMIT - 1);
+      const trimmed = newHistory.slice(newHistory.length - HISTORY_LIMIT);
+      setHistory(trimmed);
+      setIndex(trimmed.length - 1);
     } else {
       setHistory(newHistory);
       setIndex(newHistory.length - 1);
     }
-    // после пуша pending сбрасываем
+
+    setCanvasSize(snapshot.canvasSize);
     setPending(null);
   };
 
@@ -64,25 +80,18 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeLayer = (id: string) => {
-    if (layers.length === 1) return; // нельзя удалить последний слой
-    const newLayers = deepClone(layers).filter((l: LayerType) => l.id !== id);
+    if (layers.length === 1) return;
+    const newLayers = deepClone(layers).filter((l) => l.id !== id);
     pushHistory(newLayers);
     if (activeLayerId === id) setActiveLayerId(newLayers[0].id);
   };
 
-  const clearActiveLayer = () => {
-    updateLayer([], [], { commit: true });
-  };
+  const clearActiveLayer = () => updateLayer([], [], { commit: true });
 
-  /**
-   * Обновляет активный слой.
-   * Если opts.commit === false — применяет обновление временно (pending),
-   * иначе — добавляет snapshot в историю.
-   */
   const updateLayer: UpdateLayerType = (lines, filledShapes, opts = { commit: true }) => {
     if (!activeLayerId) return;
     const base = deepClone(layers);
-    const idx = base.findIndex((l: LayerType) => l.id === activeLayerId);
+    const idx = base.findIndex((l) => l.id === activeLayerId);
     if (idx === -1) return;
 
     const updated = {
@@ -94,12 +103,15 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
     base[idx] = updated;
 
     if (opts.commit === false) {
-      // Временно показываем изменения, не трогая историю
       setPending(base);
     } else {
-      // Коммитим в историю
       pushHistory(base);
     }
+  };
+
+  const updateCanvasSize = (newSize: { width: number; height: number }) => {
+    setCanvasSize(newSize);
+    pushHistory(layers, newSize);
   };
 
   const commit = () => {
@@ -109,25 +121,33 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
 
   const undo = () => {
     if (!canUndo) return;
-    setIndex((i) => i - 1);
+    const newIndex = index - 1;
+    setIndex(newIndex);
+    const snapshot = history[newIndex];
+    setCanvasSize(snapshot.canvasSize);
     setPending(null);
   };
 
   const redo = () => {
     if (!canRedo) return;
-    setIndex((i) => i + 1);
+    const newIndex = index + 1;
+    setIndex(newIndex);
+    const snapshot = history[newIndex];
+    setCanvasSize(snapshot.canvasSize);
     setPending(null);
   };
 
   const value = useMemo(
     () => ({
       layers,
+      canvasSize,
       activeLayerId,
       setActiveLayerId,
       addLayer,
       removeLayer,
       clearActiveLayer,
       updateLayer,
+      updateCanvasSize,
       commit,
       undo,
       redo,
@@ -136,11 +156,9 @@ export const LayersProvider = ({ children }: { children: ReactNode }) => {
       selection,
       setSelection,
     }),
-    [layers, activeLayerId, history, index, pending, canUndo, canRedo, selection]
+    [layers, canvasSize, activeLayerId, index, pending, canUndo, canRedo, selection]
   );
 
-  // Приведение к типу, чтобы не ломать существующий контракт типов —
-  // при желании можно обновить LayersContextType в ../types/share
   return <LayersContext.Provider value={value as unknown as LayersContextType}>{children}</LayersContext.Provider>;
 };
 

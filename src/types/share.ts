@@ -94,6 +94,11 @@ export type LayersContextType = {
   commit: () => void;
   selection: SelectionType | null;
   setSelection: (selection: SelectionType | null) => void;
+  updateCanvasSize: (newSize: { width: number; height: number }) => void;
+  canvasSize: {
+    width: number;
+    height: number;
+  };
 };
 
 export type SizeContextType = {
@@ -217,6 +222,15 @@ export type UseCanvasHandlersType = {
   commit: () => void;
   color: string;
   setTempCanvasOffset: React.Dispatch<React.SetStateAction<Point>>;
+  useCrop: any;
+};
+
+export type UseCenteringCanvasType = {
+  parentContainerRef: React.RefObject<HTMLDivElement | null>;
+  canvasParentSize: СanvasParentSizeType;
+  setScale: React.Dispatch<React.SetStateAction<number>>;
+  setPosition: React.Dispatch<React.SetStateAction<Point>>;
+  paddingFactor: number;
 };
 
 // renders

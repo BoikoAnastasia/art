@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { AppBar, Box, MenuItem, Toolbar } from '@mui/material';
+// Mui
+import { AppBar, Box, MenuItem, Toolbar, Tooltip } from '@mui/material';
 import RedoIcon from '@mui/icons-material/Redo';
 import UndoIcon from '@mui/icons-material/Undo';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
-import { StyledButtonTopSidebar, StyledIconButton, StyledMenu } from '../../StyledComponents';
+// context
 import { useFlip } from '../../contexts/FlipContext';
 import { useLayers } from '../../contexts/LayersContext';
+// style
+import { StyledButtonTopSidebar, StyledIconButton, StyledMenu } from '../../StyledComponents';
 
 export const TopSidebar = () => {
   const [anchorElFile, setAnchorElFile] = useState<null | HTMLElement>(null);
@@ -103,18 +106,26 @@ export const TopSidebar = () => {
         </Box>
 
         {/* Иконки */}
-        <StyledIconButton onClick={() => toggleFlip('flipX')}>
-          <SwapHorizIcon />
-        </StyledIconButton>
-        <StyledIconButton onClick={() => toggleFlip('flipY')}>
-          <SwapVertIcon />
-        </StyledIconButton>
-        <StyledIconButton onClick={() => undo()} disabled={!canUndo}>
-          <UndoIcon />
-        </StyledIconButton>
-        <StyledIconButton onClick={() => redo()} disabled={!canRedo}>
-          <RedoIcon />
-        </StyledIconButton>
+        <Tooltip title="Повернуть по горизонтали">
+          <StyledIconButton onClick={() => toggleFlip('flipX')}>
+            <SwapHorizIcon />
+          </StyledIconButton>
+        </Tooltip>
+        <Tooltip title="Повернуть по вертикали">
+          <StyledIconButton onClick={() => toggleFlip('flipY')}>
+            <SwapVertIcon />
+          </StyledIconButton>
+        </Tooltip>
+        <Tooltip title="Назад">
+          <StyledIconButton onClick={() => undo()} disabled={!canUndo}>
+            <UndoIcon />
+          </StyledIconButton>
+        </Tooltip>
+        <Tooltip title="Вперед">
+          <StyledIconButton onClick={() => redo()} disabled={!canRedo}>
+            <RedoIcon />
+          </StyledIconButton>
+        </Tooltip>
       </Toolbar>
     </AppBar>
   );

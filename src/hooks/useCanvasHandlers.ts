@@ -39,6 +39,7 @@ export const useCanvasHandlers = ({
   commit,
   color,
   setTempCanvasOffset,
+  useCrop,
 }: UseCanvasHandlersType) => {
   const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const stage = e.target.getStage();
@@ -48,6 +49,11 @@ export const useCanvasHandlers = ({
 
     const visualPos = pos;
     const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+
+    if (tool === 'crop') {
+      useCrop.startCrop(visualPos);
+      return;
+    }
 
     if (tool === 'move') {
       useTransform.startMove(pos);
@@ -74,13 +80,18 @@ export const useCanvasHandlers = ({
     const client = getClientCoordinates(e.evt);
     const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
 
-    // Передаем ВИЗУАЛЬНЫЕ координаты для курсора
-    setHoverPos(visualPos); // <- это должно быть visualPos, а не logicalPos
+    // Передаем ВИЗУАЛЬНЫЕ координаты для инверсии
+    setHoverPos(visualPos);
 
     const stage = e.target.getStage();
     if (!stage) return;
-    const pos = stage.getPointerPosition(); // <- это визуальные координаты Stage
+    const pos = stage.getPointerPosition();
     if (!pos) return;
+
+    if (tool === 'crop') {
+      useCrop.continueCrop(visualPos);
+      return;
+    }
 
     if (tool === 'move') {
       if (useTransform.isMoving.current) {
@@ -90,7 +101,7 @@ export const useCanvasHandlers = ({
     }
 
     if (tool === 'pen' || tool === 'eraser') {
-      // Преобразуем визуальные в логические для рисования
+      // Преобразу  ем визуальные в логические для рисования
       const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
       useDrawing.continueDrawing(logicalPos, activeLayer);
       return;
@@ -104,6 +115,10 @@ export const useCanvasHandlers = ({
   };
 
   const handleMouseUp = () => {
+    if (tool === 'crop') {
+      useCrop.endCrop();
+      return;
+    }
     if (tool === 'pen' || tool === 'eraser') return useDrawing.endDrawing();
     if (tool === 'move') {
       useTransform.endMove();

@@ -19,46 +19,104 @@ import Tourch from '../icons/torch.png';
 import Transparency from '../icons/transparency.png';
 import { useTool } from '../../contexts/ToolsContext';
 import { StyledLeftSideBarBox } from '../../StyledComponents';
+import { Tooltip } from '@mui/material';
 
 export const LeftSideBar = () => {
   const { tool, setTool } = useTool();
   const sidebarButtons = [
-    { id: 'move', icon: Move, isIcon: false, action: () => setTool('move'), disabled: false },
-    { id: 'lasso', icon: Lasso, isIcon: false, action: () => setTool('lasso'), disabled: false },
-    { id: 'eraser', icon: Eraser, isIcon: false, action: () => setTool('eraser'), disabled: false },
-    { id: 'blur', icon: Tourch, isIcon: false, action: () => setTool('blur'), disabled: true },
-    { id: 'pen', icon: BrushIcon, isIcon: true, action: () => setTool('pen'), disabled: false },
-    { id: 'fill', icon: FormatColorFillIcon, isIcon: true, action: () => setTool('fill'), disabled: false },
-    { id: 'shape', icon: InterestsIcon, isIcon: true, action: () => setTool('shape'), disabled: true },
-    { id: 'loop', icon: LoopIcon, isIcon: true, action: () => setTool('loop'), disabled: true },
-    { id: 'hand', icon: BackHandIcon, isIcon: true, action: () => setTool('hand'), disabled: false },
-    { id: 'format', icon: FormatShapesIcon, isIcon: true, action: () => setTool('format'), disabled: true },
-    { id: 'crop', icon: CropIcon, isIcon: true, action: () => setTool('crop'), disabled: true },
-    { id: 'highlight', icon: HighlightAltIcon, isIcon: true, action: () => setTool('highlight'), disabled: true },
-    { id: 'colorize', icon: ColorizeIcon, isIcon: true, action: () => setTool('colorize'), disabled: false },
-    { id: 'transparency', icon: Transparency, isIcon: false, action: () => setTool('transparency'), disabled: false },
+    { id: 'move', icon: Move, isIcon: false, action: () => setTool('move'), disabled: false, tooltipe: 'Перетащить' },
+    { id: 'lasso', icon: Lasso, isIcon: false, action: () => setTool('lasso'), disabled: false, tooltipe: 'Лассо' },
+    { id: 'eraser', icon: Eraser, isIcon: false, action: () => setTool('eraser'), disabled: false, tooltipe: 'Ластик' },
+    { id: 'blur', icon: Tourch, isIcon: false, action: () => setTool('blur'), disabled: true, tooltipe: 'Блюр' },
+    { id: 'pen', icon: BrushIcon, isIcon: true, action: () => setTool('pen'), disabled: false, tooltipe: 'Рисование' },
+    {
+      id: 'fill',
+      icon: FormatColorFillIcon,
+      isIcon: true,
+      action: () => setTool('fill'),
+      disabled: false,
+      tooltipe: 'Заливка',
+    },
+    {
+      id: 'shape',
+      icon: InterestsIcon,
+      isIcon: true,
+      action: () => setTool('shape'),
+      disabled: true,
+      tooltipe: 'Формы',
+    },
+    {
+      id: 'loop',
+      icon: LoopIcon,
+      isIcon: true,
+      action: () => setTool('loop'),
+      disabled: true,
+      tooltipe: 'Перевернуть',
+    },
+    {
+      id: 'hand',
+      icon: BackHandIcon,
+      isIcon: true,
+      action: () => setTool('hand'),
+      disabled: false,
+      tooltipe: 'Перемещение хоста',
+    },
+    {
+      id: 'format',
+      icon: FormatShapesIcon,
+      isIcon: true,
+      action: () => setTool('format'),
+      disabled: true,
+      tooltipe: 'Изменить форму',
+    },
+    { id: 'crop', icon: CropIcon, isIcon: true, action: () => setTool('crop'), disabled: false, tooltipe: 'Обрезать' },
+    {
+      id: 'highlight',
+      icon: HighlightAltIcon,
+      isIcon: true,
+      action: () => setTool('highlight'),
+      disabled: true,
+      tooltipe: 'Изменить форму',
+    },
+    {
+      id: 'colorize',
+      icon: ColorizeIcon,
+      isIcon: true,
+      action: () => setTool('colorize'),
+      disabled: false,
+      tooltipe: 'Пипетка',
+    },
+    {
+      id: 'transparency',
+      icon: Transparency,
+      isIcon: false,
+      action: () => setTool('transparency'),
+      disabled: false,
+      tooltipe: 'Очистить слой',
+    },
   ];
 
   return (
     <StyledLeftSideBarBox>
       {sidebarButtons.map((item) => (
-        <IconButton
-          disabled={item.disabled}
-          key={item.id}
-          sx={{
-            background: tool === item.id ? '#4c4c4c' : 'transparent',
-            color: 'white',
-            borderRadius: '0',
-          }}
-          size="small"
-          onClick={item.action}
-        >
-          {item.isIcon ? (
-            <item.icon />
-          ) : (
-            <img src={item.icon as string} alt={`icon-${item.id}`} style={{ width: '24px', height: '24px' }} />
-          )}
-        </IconButton>
+        <Tooltip title={item.tooltipe} key={item.id}>
+          <IconButton
+            disabled={item.disabled}
+            sx={{
+              background: tool === item.id ? '#4c4c4c' : 'transparent',
+              color: 'white',
+              borderRadius: '0',
+            }}
+            size="small"
+            onClick={item.action}
+          >
+            {item.isIcon ? (
+              <item.icon />
+            ) : (
+              <img src={item.icon as string} alt={`icon-${item.id}`} style={{ width: '24px', height: '24px' }} />
+            )}
+          </IconButton>
+        </Tooltip>
       ))}
     </StyledLeftSideBarBox>
   );
