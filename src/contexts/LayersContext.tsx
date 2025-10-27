@@ -109,6 +109,11 @@ export const LayersProvider = ({
     }
   };
 
+  const setLayers = (newLayers: LayerType[], newCanvasSize?: { width: number; height: number }) => {
+    const sizeToPush = newCanvasSize ?? canvasSize;
+    pushHistory(newLayers, sizeToPush);
+  };
+
   const updateCanvasSize = (newSize: { width: number; height: number }) => {
     setCanvasSize(newSize);
     pushHistory(layers, newSize);
@@ -155,6 +160,7 @@ export const LayersProvider = ({
       canRedo,
       selection,
       setSelection,
+      setLayers,
     }),
     [layers, canvasSize, activeLayerId, index, pending, canUndo, canRedo, selection]
   );

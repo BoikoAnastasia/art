@@ -1,3 +1,6 @@
+import Konva from 'konva';
+import { Rect as RectType } from 'konva/lib/shapes/Rect';
+
 export interface IStyledButtonLayer {
   isActive?: boolean;
 }
@@ -79,6 +82,11 @@ export type LayerType = {
   selections?: SelectionType[];
 };
 
+export type SetLayersType = {
+  newLayers: LayerType[];
+  newCanvasSize?: { width: number; height: number };
+};
+
 export type LayersContextType = {
   layers: LayerType[];
   activeLayerId: string;
@@ -99,6 +107,37 @@ export type LayersContextType = {
     width: number;
     height: number;
   };
+  setLayers: SetLayersType;
+};
+
+export type CenterCanvasType = {
+  width: number;
+  height: number;
+};
+
+export type CropType = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  visible: boolean;
+};
+
+export type HandleApplyCropType = {
+  cropArea: СanvasParentSizeType;
+  operation: 'crop' | 'extend';
+  layers: LayerType[];
+  centerCanvas: (size: CenterCanvasType) => void;
+  canvasSize: { width: number; height: number };
+  setLayers: SetLayersType;
+};
+
+export type ApplyCropOperationType = {
+  cropArea: any;
+  layers: LayerType[];
+  centerCanvas: (size: CenterCanvasType) => void;
+  canvasSize: { width: number; height: number };
+  setLayers: any;
 };
 
 export type SizeContextType = {
@@ -239,6 +278,13 @@ export type CursorRenderType = {
   size: number;
   tool: Tool;
   color: string;
+};
+
+export type CropRenderType = {
+  cropRectRef: React.RefObject<RectType | null>;
+  useCrop: any;
+  tool: Tool;
+  transformerRef: React.RefObject<Konva.Transformer | null>;
 };
 
 export type LayerRendererType = {

@@ -1,6 +1,6 @@
-// hooks/useCenteringCanvas.ts
 import { useEffect } from 'react';
-import { UseCenteringCanvasType } from '../types/share';
+// types
+import { CenterCanvasType, UseCenteringCanvasType } from '../types/share';
 
 export const useCenteringCanvas = ({
   parentContainerRef,
@@ -16,7 +16,7 @@ export const useCenteringCanvas = ({
   }, [parentContainerRef, canvasParentSize.width, canvasParentSize.height, paddingFactor, setScale, setPosition]);
 
   // Экспортируем функцию центрирования для использования извне
-  const centerCanvas = (size: { width: number; height: number }) => {
+  const centerCanvas = (size: CenterCanvasType) => {
     if (!parentContainerRef.current) return;
 
     const parent = parentContainerRef.current.getBoundingClientRect();

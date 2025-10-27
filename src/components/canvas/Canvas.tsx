@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Layer, Rect, Stage } from 'react-konva';
-
+// konva
+import Konva from 'konva';
+import { Layer, Stage } from 'react-konva';
+import { Rect as RectType } from 'konva/lib/shapes/Rect';
 // render
 import { CursorRender } from '../../render/CursorRender';
 import { LayerRenderer } from '../../render/LayerRenderer';
-
+import { CropRender } from '../../render/CropRender';
 // context
 import { useColor } from '../../contexts/ColorContext';
 import { useSize } from '../../contexts/SizeContext';
@@ -13,27 +15,21 @@ import { useTool } from '../../contexts/ToolsContext';
 import { useLayers } from '../../contexts/LayersContext';
 import { useFlip } from '../../contexts/FlipContext';
 import { useBrush } from '../../contexts/BrushContext';
-
 // tools
 import { useLasso } from '../../tools/useLasso';
 import { useFill } from '../../tools/useFill';
-
+// utils
+import { handleApplyCrop } from '../../utils/crop/handleApplyCrop';
 // hooks
 import { useCanvasZoom } from '../../hooks/useCanvasZoom';
 import { useCanvasDrag } from '../../hooks/useCanvasDrag';
 import { useDrawingTool } from '../../hooks/useDrawingTool';
 import { useCanvasTransform } from '../../hooks/useCanvasTransform';
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers';
-
-// types
-import { CanvasType, Point } from '../../types/share';
-import { useCenteringCanvas } from '../../hooks/useCenteringCanvas';
 import { useCropHook } from '../../hooks/useCrop';
-
-import { Transformer } from 'react-konva';
-import { Transformer as TransformerType } from 'konva/lib/shapes/Transformer';
-import { Rect as RectType } from 'konva/lib/shapes/Rect';
-import { KonvaEventObject, Node, NodeConfig } from 'konva/lib/Node';
+// types
+import { CanvasType } from '../../types/share';
+import { useCenteringCanvas } from '../../hooks/useCenteringCanvas';
 
 export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => {
   // refs
@@ -54,10 +50,10 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const { tool, setTool } = useTool();
   const { flip } = useFlip();
   const { brush } = useBrush();
-  const { layers, activeLayerId, updateLayer, commit, canvasSize, updateCanvasSize } = useLayers();
+  const { layers, activeLayerId, updateLayer, commit, canvasSize, updateCanvasSize, setLayers } = useLayers();
   const activeLayer = layers.find((l) => l.id === activeLayerId);
 
-  const transformerRef = useRef<TransformerType>(null);
+  const transformerRef = useRef<Konva.Transformer | null>(null);
   const cropRectRef = useRef<RectType>(null);
 
   // tools
@@ -65,6 +61,7 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const lasso = useLasso(tool);
   // hooks
   const useCrop = useCropHook(canvasParentSize);
+
   useCanvasZoom({ scale, position, setScale, setPosition, parentContainerRef });
   const { handleContainerMouseDown } = useCanvasDrag({
     tool,
@@ -123,6 +120,7 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
     }
   }, [tool, activeLayer, updateLayer, setTool]);
 
+  // Crop effects
   useEffect(() => {
     if (tool === 'crop' && useCrop.cropRect.visible && transformerRef.current && cropRectRef.current) {
       transformerRef.current.nodes([cropRectRef.current]);
@@ -131,141 +129,16 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
     }
   }, [tool, useCrop.cropRect.visible]);
 
-  const handleTransformEnd = (e: any) => {
-    if (tool !== 'crop') return;
-
-    const node = e.target;
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-
-    // Reset scale
-    node.scaleX(1);
-    node.scaleY(1);
-
-    useCrop.setCropRect((prev) => ({
-      ...prev,
-      x: node.x(),
-      y: node.y(),
-      width: Math.max(5, node.width() * scaleX),
-      height: Math.max(5, node.height() * scaleY),
-    }));
-  };
-
-  // Функция для применения crop ко всем слоям
-  const handleApplyCrop = (cropArea: any, operation: 'crop' | 'extend') => {
-    console.log(`Applying ${operation}:`, cropArea);
-
-    if (operation === 'crop') {
-      applyCropOperation(cropArea);
+  useEffect(() => {
+    if (!transformerRef.current) return;
+    if (useCrop.cropRect.visible && cropRectRef.current) {
+      transformerRef.current.nodes([cropRectRef.current]);
+      transformerRef.current.getLayer()?.batchDraw();
     } else {
-      applyExtendOperation(cropArea);
+      transformerRef.current.nodes([]);
+      transformerRef.current.getLayer()?.batchDraw();
     }
-  };
-
-  // Логика обрезки
-  const applyCropOperation = (cropArea: any) => {
-    const newCanvasSize = {
-      width: cropArea.width,
-      height: cropArea.height,
-    };
-
-    // Обновляем каждый слой - СМЕЩАЕМ координаты относительно области обрезки
-    layers.forEach((layer) => {
-      // Обрезаем линии - СМЕЩАЕМ точки
-      const croppedLines = layer.lines
-        ?.map((line) => ({
-          ...line,
-          points: line.points.map((point: Point) => ({
-            x: point.x - cropArea.x,
-            y: point.y - cropArea.y,
-          })),
-        }))
-        .filter((line) => {
-          // Фильтруем линии, которые полностью вне зоны обрезки
-          return line.points.some(
-            (point: Point) => point.x >= 0 && point.x <= cropArea.width && point.y >= 0 && point.y <= cropArea.height
-          );
-        });
-
-      // Обрезаем заполненные фигуры - СМЕЩАЕМ точки
-      const croppedFilledShapes = layer.filledShapes
-        ?.map((shape) => {
-          if (shape.closed) {
-            return {
-              ...shape,
-              points: shape.points.map((point: any) => ({
-                x: point.x - cropArea.x,
-                y: point.y - cropArea.y,
-              })),
-            };
-          }
-          return shape;
-        })
-        .filter((shape) => {
-          if (shape.closed) {
-            return shape.points.some(
-              (point: any) => point.x >= 0 && point.x <= cropArea.width && point.y >= 0 && point.y <= cropArea.height
-            );
-          }
-          return true;
-        });
-
-      updateLayer(croppedLines || [], croppedFilledShapes || []);
-    });
-
-    updateCanvasSize(newCanvasSize);
-    commit();
-    centerCanvas(newCanvasSize);
-  };
-
-  // Логика расширения холста
-  const applyExtendOperation = (extendArea: any) => {
-    // Вычисляем новый размер холста
-    const newWidth = Math.max(canvasSize.width, extendArea.x + extendArea.width);
-    const newHeight = Math.max(canvasSize.height, extendArea.y + extendArea.height);
-
-    const newCanvasSize = {
-      width: newWidth,
-      height: newHeight,
-    };
-
-    // Смещаем существующие слои если нужно
-    const offsetX = extendArea.x < 0 ? Math.abs(extendArea.x) : 0;
-    const offsetY = extendArea.y < 0 ? Math.abs(extendArea.y) : 0;
-
-    if (offsetX > 0 || offsetY > 0) {
-      layers.forEach((layer) => {
-        // Смещаем линии
-        const offsetLines = layer.lines?.map((line) => ({
-          ...line,
-          points: line.points.map((point: Point) => ({
-            x: point.x + offsetX,
-            y: point.y + offsetY,
-          })),
-        }));
-
-        // Смещаем заполненные фигуры
-        const offsetFilledShapes = layer.filledShapes?.map((shape) => {
-          if (shape.closed) {
-            return {
-              ...shape,
-              points: shape.points.map((point: any) => ({
-                x: point.x + offsetX,
-                y: point.y + offsetY,
-              })),
-            };
-          }
-          return shape;
-        });
-
-        updateLayer(offsetLines || [], offsetFilledShapes || []);
-      });
-    }
-
-    updateCanvasSize(newCanvasSize);
-    commit();
-    centerCanvas(newCanvasSize);
-  };
+  }, [useCrop.cropRect.visible]);
 
   return (
     <div
@@ -308,37 +181,7 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
         {/* Слой для crop прямоугольника и трансформера */}
         <Layer>
           {useCrop.cropRect.visible && (
-            <>
-              <Rect
-                ref={cropRectRef}
-                x={useCrop.cropRect.x}
-                y={useCrop.cropRect.y}
-                width={useCrop.cropRect.width}
-                height={useCrop.cropRect.height}
-                fill="rgba(0,0,0,0.2)"
-                stroke="#000"
-                strokeWidth={1}
-                draggable={tool === 'crop'}
-                onTransformEnd={handleTransformEnd}
-                onDragEnd={(e: KonvaEventObject<DragEvent, Node<NodeConfig>>) => {
-                  useCrop.setCropRect((prev) => ({
-                    ...prev,
-                    x: e.target.x(),
-                    y: e.target.y(),
-                  }));
-                }}
-              />
-              <Transformer
-                ref={transformerRef}
-                boundBoxFunc={(oldBox: any, newBox: any) => {
-                  // Limit resize
-                  if (newBox.width < 5 || newBox.height < 5) {
-                    return oldBox;
-                  }
-                  return newBox;
-                }}
-              />
-            </>
+            <CropRender cropRectRef={cropRectRef} useCrop={useCrop} tool={tool} transformerRef={transformerRef} />
           )}
         </Layer>
         {/* Отдельный слой для курсора */}
@@ -348,7 +191,18 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
       {useCrop.cropRect.visible && (
         <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
           <button
-            onClick={() => useCrop.applyCrop(handleApplyCrop)}
+            onClick={() =>
+              useCrop.applyCrop((cropArea, operation) =>
+                handleApplyCrop({
+                  cropArea,
+                  operation,
+                  layers,
+                  setLayers,
+                  centerCanvas,
+                  canvasSize,
+                })
+              )
+            }
             style={{
               padding: '8px 16px',
               backgroundColor: '#007bff',

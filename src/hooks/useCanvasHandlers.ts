@@ -1,4 +1,3 @@
-// konva
 import { KonvaEventObject } from 'konva/lib/Node';
 // utils
 import { toLogicalPos, getStagePosFromClient } from '../utils/position';
@@ -44,11 +43,14 @@ export const useCanvasHandlers = ({
   const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
     const stage = e.target.getStage();
     if (!stage) return;
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
 
-    const visualPos = pos;
-    const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+    // 1) Единый путь: evt -> client -> visualPos (учитывает CSS трансформ контейнера)
+    const client = getClientCoordinates(e.evt);
+    const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
+    if (!visualPos) return;
+
+    // 2) logicalPos — это только для рисования/лассо/филл (преобразованная по flip и т.п.)
+    const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
 
     if (tool === 'crop') {
       useCrop.startCrop(visualPos);
@@ -56,37 +58,44 @@ export const useCanvasHandlers = ({
     }
 
     if (tool === 'move') {
-      useTransform.startMove(pos);
+      // Передаём visualPos (или адаптируйте useTransform, если он ожидал другой формат)
+      useTransform.startMove(visualPos);
       return;
     }
-    if (tool === 'pen' || tool === 'eraser') return useDrawing.startDrawing(pos, activeLayer);
+
+    if (tool === 'pen' || tool === 'eraser') return useDrawing.startDrawing(logicalPos, activeLayer);
+
     if (tool === 'lasso') return useLasso.handleMouseDown(logicalPos);
+
     if (tool === 'fill') {
       fillAtPoint(logicalPos, color, useLasso.lassoPoints);
       commit();
       return;
     }
+
     if (tool === 'colorize') {
+      // для colorize используем визуальную позицию (она в системе координат канвы)
       const ctx = stage?.toCanvas().getContext('2d');
       if (!ctx) return;
-      const pixel = ctx.getImageData(visualPos.x, visualPos.y, 1, 1).data;
-      const rgba = `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3] / 255})`;
-      setColor(rgba);
-      setTool('pen');
+      const x = Math.round(visualPos.x);
+      const y = Math.round(visualPos.y);
+      try {
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        const rgba = `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3] / 255})`;
+        setColor(rgba);
+        setTool('pen');
+      } catch (err) {}
     }
   };
 
   const handleMouseMove = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
+    // Всегда вычисляем visualPos через client (единая система)
     const client = getClientCoordinates(e.evt);
     const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
+    if (!visualPos) return;
 
-    // Передаем ВИЗУАЛЬНЫЕ координаты для инверсии
+    // Передаем ВИЗУАЛЬНЫЕ координаты для инверсии/курсорного рендера
     setHoverPos(visualPos);
-
-    const stage = e.target.getStage();
-    if (!stage) return;
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
 
     if (tool === 'crop') {
       useCrop.continueCrop(visualPos);
@@ -94,21 +103,21 @@ export const useCanvasHandlers = ({
     }
 
     if (tool === 'move') {
-      if (useTransform.isMoving.current) {
-        useTransform.continueMove(pos, setTempCanvasOffset, position, scale);
+      // useTransform ожидает продолжение перемещения — передаем visualPos
+      if (useTransform.isMoving?.current) {
+        useTransform.continueMove(visualPos, setTempCanvasOffset, position, scale);
       }
       return;
     }
 
     if (tool === 'pen' || tool === 'eraser') {
-      // Преобразу  ем визуальные в логические для рисования
-      const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+      const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
       useDrawing.continueDrawing(logicalPos, activeLayer);
       return;
     }
 
     if (tool === 'lasso') {
-      const logicalPos = toLogicalPos(pos, flip, canvasParentSize);
+      const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
       useLasso.handleMouseMove(logicalPos);
       return;
     }

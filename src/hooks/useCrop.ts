@@ -1,9 +1,9 @@
-// hooks/useCropHook.ts
 import { useRef, useState } from 'react';
-import { Point } from '../types/share';
+// types
+import { CropType, Point, СanvasParentSizeType } from '../types/share';
 
-export const useCropHook = (canvasParentSize: any) => {
-  const [cropRect, setCropRect] = useState({
+export const useCropHook = (canvasParentSize: СanvasParentSizeType) => {
+  const [cropRect, setCropRect] = useState<CropType>({
     x: 0,
     y: 0,
     width: 0,
@@ -46,9 +46,7 @@ export const useCropHook = (canvasParentSize: any) => {
     setIsCropping(false);
   };
 
-  const applyCrop = (onApplyCrop: (cropArea: any, operation: 'crop' | 'extend') => void) => {
-    console.log('Apply crop:', cropRect);
-    // Определяем операцию: обрезка или расширение
+  const applyCrop = (onApplyCrop: (cropArea: СanvasParentSizeType, operation: 'crop' | 'extend') => void) => {
     const operation =
       cropRect.x < 0 ||
       cropRect.y < 0 ||
@@ -58,7 +56,7 @@ export const useCropHook = (canvasParentSize: any) => {
         : 'crop';
 
     onApplyCrop(cropRect, operation);
-    setCropRect((prev) => ({ ...prev, visible: false }));
+    setCropRect((prev: CropType) => ({ ...prev, visible: false }));
   };
 
   return {
