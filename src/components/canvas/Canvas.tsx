@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 // konva
 import Konva from 'konva';
 import { Layer, Stage } from 'react-konva';
@@ -27,15 +27,21 @@ import { useDrawingTool } from '../../hooks/useDrawingTool';
 import { useCanvasTransform } from '../../hooks/useCanvasTransform';
 import { useCanvasHandlers } from '../../hooks/useCanvasHandlers';
 import { useCropHook } from '../../hooks/useCrop';
+
 // types
 import { CanvasType } from '../../types/share';
 import { useCenteringCanvas } from '../../hooks/useCenteringCanvas';
+import { useDrawingToolKonva } from '../../hooks/useDrawingToolKonva';
 
 export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => {
   // refs
   const stageRef = useRef(null);
   const containerRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const transformerRef = useRef<Konva.Transformer | null>(null);
+  const cropRectRef = useRef<any>(null);
+  const tempLayerRef = useRef<Konva.Layer | null>(null);
 
   // state
   const [tempCanvasOffset, setTempCanvasOffset] = useState({ x: 0, y: 0 });
@@ -53,9 +59,6 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const { layers, activeLayerId, updateLayer, commit, canvasSize, updateCanvasSize, setLayers } = useLayers();
   const activeLayer = layers.find((l) => l.id === activeLayerId);
 
-  const transformerRef = useRef<Konva.Transformer | null>(null);
-  const cropRectRef = useRef<RectType>(null);
-
   // tools
   const { fillAtPoint } = useFill();
   const lasso = useLasso(tool);
@@ -71,7 +74,7 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
     dragOffset,
     setPosition,
   });
-  const drawing = useDrawingTool({
+  const drawing = useDrawingToolKonva({
     tool,
     brush,
     color,
@@ -79,9 +82,12 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
     size,
     flip,
     canvasParentSize,
-    stageRef,
+    stageRef: tempLayerRef,
     updateLayer,
     commit,
+    layers,
+    activeLayerId,
+    canvasRef,
   });
   const transform = useCanvasTransform({ tool, layers, updateLayer, setTempCanvasOffset, tempCanvasOffset });
   const { handleMouseDown, handleMouseMove, handleMouseUp } = useCanvasHandlers({
@@ -139,88 +145,57 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
       transformerRef.current.getLayer()?.batchDraw();
     }
   }, [useCrop.cropRect.visible]);
+  const mouseDown = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (activeLayer) drawing.startDrawing(point);
+  };
+
+  const mouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (activeLayer) drawing.continueDrawing(point);
+    setHoverPos(point);
+  };
+
+  const mouseUp = () => {
+    drawing.endDrawing();
+  };
 
   return (
-    <div
-      ref={containerRef}
-      onMouseDown={(e: React.MouseEvent<HTMLDivElement, MouseEvent>) => handleContainerMouseDown(e)}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-        transformOrigin: '0 0',
-        background: '#fff',
-      }}
-    >
-      {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-      {/* @ts-ignore */}
-      <Stage
-        ref={stageRef}
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <canvas
+        ref={canvasRef}
         width={canvasSize.width}
         height={canvasSize.height}
-        style={{ cursor: tool === 'crop' ? 'crosshair' : tool === 'hand' ? 'grab' : tool === 'move' ? 'move' : 'none' }}
-        onMouseDown={(e) => handleMouseDown(e)}
-        onMouseMove={(e) => handleMouseMove(e)}
-        onMouseUp={handleMouseUp}
-        onTouchStart={(e) => handleMouseDown(e)}
-        onTouchMove={(e) => handleMouseMove(e)}
-        onTouchEnd={handleMouseUp}
-      >
-        {/* Группа с инверсией и ВРЕМЕННЫМ смещением */}
-        {layers?.map((layer) => (
-          <LayerRenderer
-            key={layer.id}
-            layer={layer}
-            tempCanvasOffset={tempCanvasOffset}
-            flip={flip}
-            parent={canvasParentSize}
-            lassoPoints={lasso.lassoPoints}
-          />
-        ))}
-        {/* Слой для crop прямоугольника и трансформера */}
-        <Layer>
-          {useCrop.cropRect.visible && (
-            <CropRender cropRectRef={cropRectRef} useCrop={useCrop} tool={tool} transformerRef={transformerRef} />
-          )}
-        </Layer>
-        {/* Отдельный слой для курсора */}
-        <CursorRender hoverPos={hoverPos} size={size} tool={tool} color={color}></CursorRender>
-      </Stage>
-      {/* Кнопка для применения crop */}
+        style={{ cursor: tool === 'hand' ? 'grab' : 'crosshair', background: '#fff' }}
+        onMouseDown={mouseDown}
+        onMouseMove={mouseMove}
+        onMouseUp={mouseUp}
+        onMouseLeave={mouseUp}
+      />
+
+      {/* Отрисовка слоёв через Konva только для UI */}
+      {layers.map((layer) => (
+        <LayerRenderer
+          key={layer.id}
+          layer={layer}
+          tempCanvasOffset={{ x: 0, y: 0 }}
+          flip={flip}
+          parent={canvasParentSize}
+          lassoPoints={lasso.lassoPoints}
+        />
+      ))}
+
+      {/* Crop */}
       {useCrop.cropRect.visible && (
-        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 1000 }}>
-          <button
-            onClick={() =>
-              useCrop.applyCrop((cropArea, operation) =>
-                handleApplyCrop({
-                  cropArea,
-                  operation,
-                  layers,
-                  setLayers,
-                  centerCanvas,
-                  canvasSize,
-                })
-              )
-            }
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
-          >
-            {useCrop.cropRect.x < 0 ||
-            useCrop.cropRect.y < 0 ||
-            useCrop.cropRect.x + useCrop.cropRect.width > canvasSize.width ||
-            useCrop.cropRect.y + useCrop.cropRect.height > canvasSize.height
-              ? 'Extend Canvas'
-              : 'Обрезать'}
-          </button>
-        </div>
+        <CropRender cropRectRef={cropRectRef} useCrop={useCrop} tool={tool} transformerRef={transformerRef} />
       )}
+
+      {/* Курсор */}
+      <CursorRender hoverPos={hoverPos} size={size} tool={tool} color={color} />
     </div>
   );
 };

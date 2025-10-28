@@ -1,10 +1,19 @@
+import { airbrush } from '../brush/airbrush';
 import { blurBrush } from '../brush/blurBrush';
 import { calligraphyBrush } from '../brush/calligraphyBrush';
 import { defaultBrush } from '../brush/defaultBrush';
 import { dripBrush } from '../brush/dripBrush';
 import { foamBrush } from '../brush/foamBrush';
 
-export const SwitchBrush = (brush: string) => {
+export interface BrushProps {
+  start: any;
+  end: any;
+  color: string;
+  size: number;
+  state?: any;
+}
+
+export const SwitchBrush = (brush: string): ((ctx: CanvasRenderingContext2D, props: BrushProps) => any) => {
   switch (brush) {
     case 'pen':
       return defaultBrush;
@@ -16,6 +25,8 @@ export const SwitchBrush = (brush: string) => {
       return foamBrush;
     case 'blur':
       return blurBrush;
+    case 'air':
+      return airbrush;
     default:
       return defaultBrush;
   }

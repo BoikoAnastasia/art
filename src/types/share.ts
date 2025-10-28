@@ -22,7 +22,7 @@ export type Tool =
   | 'transparency'
   | 'calligraphy';
 
-export type Brush = 'pen' | 'calligraphy' | 'drip' | 'foam' | 'blur';
+export type Brush = 'pen' | 'calligraphy' | 'drip' | 'foam' | 'blur' | 'air';
 
 export type Flip = {
   flipX: boolean;

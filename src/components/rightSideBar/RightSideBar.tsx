@@ -15,8 +15,9 @@ export const RightSideBar = () => {
     },
     { id: 'calligraphy', name: 'Калиграфическая кисть' },
     { id: 'blur', name: 'Блюр' },
-    // { id: 'drip', name: 'Мокрая кисть' }, // TODO эта кисть не работает
-    // { id: 'foam', name: 'Мыльная кисть' }, // TODO эта кисть не работает
+    { id: 'air', name: 'Воздушная кисть' },
+    { id: 'drip', name: 'Мокрая кисть' }, // TODO эта кисть не работает
+    { id: 'foam', name: 'Мыльная кисть' }, // TODO эта кисть не работает
   ];
   const { setBrush } = useBrush();
   return (

@@ -17,6 +17,5 @@
         "endOfLine": "auto"
       }
     ]
-  //   "no-mixed-operators": "off"
-  // }
+  }
 }
