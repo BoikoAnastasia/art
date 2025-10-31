@@ -200,15 +200,6 @@ export type BrushDefaultProps = {
   size: number;
 };
 
-export interface BrushProps {
-  start: Point;
-  end: Point;
-  color: string;
-  size: number;
-  state?: CalligraphyBrushState;
-  opacity: number;
-}
-
 export type DripBrushState = {
   drips: { x: number; y: number; size: number }[];
 };

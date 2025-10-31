@@ -1,104 +1,101 @@
-import { useEffect, useRef } from 'react';
+import { Group, Layer, Line, Rect, Shape } from 'react-konva';
 import { SwitchBrush } from '../utils/switchBrush';
+import { LayerRendererType, Point } from '../types/share';
 
-export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoints, canvasRef }: any) => {
-  const lastRef = useRef({ layersLength: 0 });
+export const LayerRenderer = ({ layer, tempCanvasOffset, flip, parent, lassoPoints }: LayerRendererType) => {
+  return (
+    <Layer>
+      <Group
+        x={tempCanvasOffset.x + (flip.flipX ? parent.width : 0)}
+        y={tempCanvasOffset.y + (flip.flipY ? parent.height : 0)}
+        scaleX={flip.flipX ? -1 : 1}
+        scaleY={flip.flipY ? -1 : 1}
+      >
+        {layer.filledShapes?.map((shape: any, i: number) =>
+          shape.closed ? (
+            <Line key={i} points={shape.points} fill={shape.fill} closed strokeEnabled={false} />
+          ) : (
+            <Rect
+              key={i}
+              x={0}
+              y={0}
+              width={parent.width}
+              height={parent.height}
+              fill={shape.fill}
+              strokeEnabled={false}
+            />
+          )
+        )}
 
-  useEffect(() => {
-    const canvas = canvasRef?.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Очистка всего канваса перед отрисовкой всех слоёв
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-
-    // общий трансформ (offset + flip). Все слои рисуем в одной системе координат.
-    ctx.translate(
-      tempCanvasOffset.x + (flip.flipX ? parent.width : 0),
-      tempCanvasOffset.y + (flip.flipY ? parent.height : 0)
-    );
-    ctx.scale(flip.flipX ? -1 : 1, flip.flipY ? -1 : 1);
-
-    // Рисуем каждый слой по очереди
-    layers.forEach((layer: any) => {
-      // filledShapes
-      (layer.filledShapes || []).forEach((shape: any) => {
-        const pts = shape.points || [];
-        ctx.fillStyle = shape.fill || '#000';
-        if (shape.closed && pts.length >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(pts[0], pts[1]);
-          for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
-          ctx.closePath();
-          ctx.fill();
-        } else {
-          ctx.fillRect(0, 0, parent.width, parent.height);
-        }
-      });
-
-      // lines
-      (layer.lines || []).forEach((line: any) => {
-        if (!line.points || line.points.length < 2) return;
-        const points = line.points;
-
-        if (line.tool === 'eraser') {
-          ctx.globalCompositeOperation = 'destination-out';
-          ctx.strokeStyle = '#FFFFFF';
-        } else {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.strokeStyle = line.color || '#000';
-        }
-
-        ctx.lineWidth = line.size || 1;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.globalAlpha = line.opacity ?? 1;
-
-        if (!line.brush || line.brush === 'default') {
-          ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
-          ctx.stroke();
-        } else {
-          const brushFunc = SwitchBrush(line.brush);
-          let brushState = {};
-          for (let i = 1; i < points.length; i++) {
-            brushState = brushFunc(ctx, {
-              start: points[i - 1],
-              end: points[i],
-              color: line.color,
-              size: line.size,
-              opacity: line.opacity,
-              state: brushState,
-            });
+        {layer.lines?.map((line, i: number) => {
+          // Для ластика используем специальную логику
+          if (line.tool === 'eraser') {
+            return (
+              <Line
+                key={i}
+                points={line.points.flatMap((p: Point) =>
+                  typeof p === 'object' && p !== null && 'x' in p ? [p.x, p.y] : p
+                )}
+                stroke="#FFFFFF" // Белый цвет для ластика
+                strokeWidth={line.size}
+                tension={0.5}
+                opacity={1}
+                lineCap="round"
+                lineJoin="round"
+                globalCompositeOperation="destination-out" // Это ключевое свойство для ластика
+                perfectDrawEnabled={false}
+              />
+            );
           }
-        }
-        ctx.globalAlpha = 1;
-      });
-    });
 
-    // Лассо рисуем поверх всех слоев (в визуальной системе, поэтому оно тут же после слоёв)
-    if (lassoPoints?.length > 0) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
+          const brushFunc = SwitchBrush(line.brush || 'default');
 
-      ctx.beginPath();
-      ctx.moveTo(lassoPoints[0], lassoPoints[1]);
-      for (let i = 2; i < lassoPoints.length; i += 2) ctx.lineTo(lassoPoints[i], lassoPoints[i + 1]);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    }
+          if (line.brush === 'default' || !line.brush) {
+            return (
+              <Line
+                key={i}
+                points={line.points.flatMap((p: Point) =>
+                  typeof p === 'object' && p !== null && 'x' in p ? [p.x, p.y] : p
+                )}
+                stroke={line.color}
+                strokeWidth={line.size}
+                tension={0.5}
+                opacity={line.opacity}
+                lineCap="round"
+                lineJoin="round"
+                globalCompositeOperation="source-over"
+                perfectDrawEnabled={false}
+              />
+            );
+          }
+          return (
+            <Shape
+              key={i}
+              sceneFunc={(ctx: any, shape: any) => {
+                ctx.save();
+                ctx.globalAlpha = line.opacity;
+                for (let j = 1; j < line.points.length; j++) {
+                  const start = line.points[j - 1];
+                  const end = line.points[j];
+                  if (!start || !end) continue;
+                  brushFunc(ctx, {
+                    start,
+                    end,
+                    color: line.color,
+                    size: line.size,
+                    state: {}, // без динамики
+                  });
+                }
 
-    ctx.restore();
-  }, [layers, tempCanvasOffset, flip, parent, lassoPoints, canvasRef]);
+                ctx.restore();
+                ctx.fillStrokeShape(shape);
+              }}
+            />
+          );
+        })}
 
-  return null;
+        {lassoPoints.length > 0 && <Line points={lassoPoints} stroke="#000" strokeWidth={1} closed dash={[4, 4]} />}
+      </Group>
+    </Layer>
+  );
 };

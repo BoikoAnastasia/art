@@ -56,7 +56,6 @@ export const useDrawingTool = ({
           color: lastStroke.color,
           size: lastStroke.size,
           state: brushState,
-          opacity: opacity,
         });
       }
     }

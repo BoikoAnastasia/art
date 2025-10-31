@@ -20,20 +20,18 @@ export const useCanvasTransform = ({
     isMoving.current = true;
   };
 
-  const continueMove = (pos: Point) => {
+  const continueMove = (pos: Point, setTempCanvasOffset: React.Dispatch<React.SetStateAction<Point>>) => {
     if (!isMoving.current) return;
     const dx = pos.x - moveStart.current.x;
     const dy = pos.y - moveStart.current.y;
-    setTempCanvasOffset((prev: any) => ({ x: prev.x + dx, y: prev.y + dy }));
+    setTempCanvasOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
     moveStart.current = pos;
   };
 
   const endMove = () => {
     if (!isMoving.current) return;
     applyCanvasOffsetToLayers({ layers, tempCanvasOffset, updateLayer, setTempCanvasOffset });
-    setTempCanvasOffset({ x: 0, y: 0 });
     isMoving.current = false;
   };
-
   return { startMove, continueMove, endMove, isMoving };
 };

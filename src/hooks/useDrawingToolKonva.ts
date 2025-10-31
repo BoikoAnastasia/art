@@ -1,36 +1,17 @@
 import { useRef } from 'react';
 import { UseDrawingToolType, Point } from '../types/share';
 import { SwitchBrush } from '../utils/switchBrush';
+
 const drawLine = (
   ctx: CanvasRenderingContext2D,
   points: Point[],
   brush: string,
   color: string,
   size: number,
-  brushState: any,
-  opacity: number,
-  tool: string
+  brushState: any
 ) => {
   if (points.length < 2) return brushState;
   const brushFunc = SwitchBrush(brush);
-
-  ctx.save();
-
-  // Если инструмент — ластик, стираем пиксели
-  if (tool === 'eraser') {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.strokeStyle = 'rgba(0,0,0,1)';
-    ctx.globalAlpha = 1;
-  } else {
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = color;
-    ctx.globalAlpha = opacity ?? 1;
-  }
-
-  ctx.lineWidth = size;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
   for (let i = 1; i < points.length; i++) {
     brushState = brushFunc(ctx, {
       start: points[i - 1],
@@ -38,11 +19,8 @@ const drawLine = (
       color,
       size,
       state: brushState,
-      opacity,
     });
   }
-
-  ctx.restore();
   return brushState;
 };
 
@@ -56,8 +34,7 @@ export const useDrawingToolKonva = ({
   activeLayerId,
   commit,
   canvasRef,
-  opacity,
-}: UseDrawingToolType & { layers: any; activeLayerId: any; canvasRef: any; opacity: any }) => {
+}: UseDrawingToolType & { layers: any; activeLayerId: any; canvasRef: any }) => {
   const isDrawing = useRef(false);
 
   const getCtx = (): CanvasRenderingContext2D | null => canvasRef.current?.getContext('2d') ?? null;
@@ -77,21 +54,11 @@ export const useDrawingToolKonva = ({
       color,
       points: [pos],
       brushState: {},
-      opacity,
     };
     activeLayer.lines.push(stroke);
 
     // Рисуем первую точку
-    stroke.brushState = drawLine(
-      ctx,
-      stroke.points,
-      stroke.brush,
-      stroke.color,
-      stroke.size,
-      stroke.brushState,
-      stroke.opacity,
-      tool
-    );
+    stroke.brushState = drawLine(ctx, stroke.points, stroke.brush, stroke.color, stroke.size, stroke.brushState);
   };
 
   const continueDrawing = (pos: Point) => {
@@ -112,9 +79,7 @@ export const useDrawingToolKonva = ({
       lastStroke.brush,
       lastStroke.color,
       lastStroke.size,
-      lastStroke.brushState,
-      lastStroke.opacity,
-      tool
+      lastStroke.brushState
     );
   };
 

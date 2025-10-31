@@ -1,62 +1,44 @@
-// render/CropRender.tsx
-import { useEffect, useRef } from 'react';
-import { Tool, СanvasParentSizeType } from '../types/share';
+import { Rect, Transformer } from 'react-konva';
+import { KonvaEventObject, Node, NodeConfig } from 'konva/lib/Node';
+// utils
+import { handleTransformEnd } from '../utils/crop/handleTransformEnd';
+// types
+import { CropType, CropRenderType } from '../types/share';
 
-export const CropRender = ({
-  useCrop,
-  tool,
-  canvasSize,
-}: {
-  useCrop: any;
-  tool: Tool;
-  canvasSize: СanvasParentSizeType;
-}) => {
-  const overlayRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = overlayRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    if (canvasSize?.width && canvasSize?.height) {
-      canvas.width = canvasSize.width;
-      canvas.height = canvasSize.height;
-      canvas.style.width = `${canvasSize.width}px`;
-      canvas.style.height = `${canvasSize.height}px`;
-    }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    if (!useCrop.cropRect.visible) return;
-
-    const { x, y, width, height } = useCrop.cropRect;
-
-    // Полупрозрачная маска
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.01)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Прямоугольник выделения
-    ctx.clearRect(x, y, width, height);
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, width, height);
-
-    // Можно добавить "ручки" по углам
-  }, [canvasSize.height, canvasSize.width, useCrop.cropRect]);
-
+export const CropRender = ({ cropRectRef, useCrop, tool, transformerRef }: CropRenderType) => {
   return (
-    <canvas
-      ref={overlayRef}
-      width={useCrop.canvasSize?.width}
-      height={useCrop.canvasSize?.height}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 100,
-        pointerEvents: 'none',
-      }}
-    />
+    <>
+      <Rect
+        ref={cropRectRef}
+        x={useCrop.cropRect.x}
+        y={useCrop.cropRect.y}
+        width={useCrop.cropRect.width}
+        height={useCrop.cropRect.height}
+        fill="rgba(0,0,0,0.2)"
+        stroke="#000"
+        strokeWidth={1}
+        draggable={tool === 'crop'}
+        onTransformEnd={(e: KonvaEventObject<Event, Node<NodeConfig>>) =>
+          handleTransformEnd(e, tool, useCrop.setCropRect)
+        }
+        onDragEnd={(e: KonvaEventObject<DragEvent, Node<NodeConfig>>) => {
+          useCrop.setCropRect((prev: CropType) => ({
+            ...prev,
+            x: e.target.x(),
+            y: e.target.y(),
+          }));
+        }}
+      />
+      <Transformer
+        ref={transformerRef}
+        boundBoxFunc={(oldBox: any, newBox: any) => {
+          // Limit resize
+          if (newBox.width < 5 || newBox.height < 5) {
+            return oldBox;
+          }
+          return newBox;
+        }}
+      />
+    </>
   );
 };

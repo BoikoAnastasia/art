@@ -48,7 +48,5 @@ export const applyCropOperation = ({ cropArea, layers, centerCanvas, setLayers }
     };
   });
   setLayers(newLayers, newCanvasSize);
-  setTimeout(() => {
-    centerCanvas(newCanvasSize);
-  }, 0);
+  centerCanvas(newCanvasSize);
 };
