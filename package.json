@@ -47,7 +47,7 @@
     "eject": "react-scripts eject",
     "prepare": "husky",
     "predeploy": "npm run build",
-    "deploy": "canvas -d build"
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
