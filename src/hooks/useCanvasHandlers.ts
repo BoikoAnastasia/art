@@ -1,24 +1,7 @@
-import { KonvaEventObject } from 'konva/lib/Node';
 // utils
-import { toLogicalPos, getStagePosFromClient } from '../utils/position';
+import { toLogicalPos } from '../utils/position';
 // types
 import { UseCanvasHandlersType } from '../types/share';
-
-// Вспомогательная функция для получения клиентских координат из события
-const getClientCoordinates = (evt: MouseEvent | TouchEvent) => {
-  if (evt instanceof MouseEvent) {
-    return {
-      clientX: evt.clientX,
-      clientY: evt.clientY,
-    };
-  } else if (evt instanceof TouchEvent && evt.touches.length > 0) {
-    return {
-      clientX: evt.touches[0].clientX,
-      clientY: evt.touches[0].clientY,
-    };
-  }
-  return { clientX: 0, clientY: 0 };
-};
 
 export const useCanvasHandlers = ({
   tool,
@@ -39,46 +22,129 @@ export const useCanvasHandlers = ({
   color,
   setTempCanvasOffset,
   useCrop,
-}: UseCanvasHandlersType) => {
-  const handleMouseDown = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-    const stage = e.target.getStage();
-    if (!stage) return;
+  canvasRef,
+}: UseCanvasHandlersType & { canvasRef: React.RefObject<HTMLCanvasElement | null> }) => {
+  /** Получение координат для pointer и touch */
+  const getPoint = (e: PointerEvent | TouchEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
 
-    // 1) Единый путь: evt -> client -> visualPos (учитывает CSS трансформ контейнера)
-    const client = getClientCoordinates(e.evt);
-    const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
-    if (!visualPos) return;
+    let clientX = 0;
+    let clientY = 0;
 
-    // 2) logicalPos — это только для рисования/лассо/филл (преобразованная по flip и т.п.)
-    const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
-
-    if (tool === 'crop') {
-      useCrop.startCrop(visualPos);
-      return;
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
     }
 
-    if (tool === 'move') {
-      // Передаём visualPos (или адаптируйте useTransform, если он ожидал другой формат)
-      useTransform.startMove(visualPos);
-      return;
+    return {
+      x: (clientX - rect.left) / scale,
+      y: (clientY - rect.top) / scale,
+    };
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement | MouseEvent>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const point = {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+
+    if (tool === 'crop') return useCrop.startCrop(point);
+    if (tool === 'move') return useTransform.startMove(point);
+    if (tool === 'pen' || tool === 'eraser') {
+      if (activeLayer) return useDrawing.startDrawing(point);
     }
 
-    if (tool === 'pen' || tool === 'eraser') return useDrawing.startDrawing(logicalPos, activeLayer);
-
-    if (tool === 'lasso') return useLasso.handleMouseDown(logicalPos);
+    if (tool === 'lasso') return useLasso.handleMouseDown(point);
 
     if (tool === 'fill') {
-      fillAtPoint(logicalPos, color, useLasso.lassoPoints);
+      fillAtPoint(point, color, useLasso.lassoPoints);
       commit();
       return;
     }
 
     if (tool === 'colorize') {
-      // для colorize используем визуальную позицию (она в системе координат канвы)
-      const ctx = stage?.toCanvas().getContext('2d');
+      const ctx = canvasRef.current?.getContext('2d');
       if (!ctx) return;
-      const x = Math.round(visualPos.x);
-      const y = Math.round(visualPos.y);
+
+      const x = Math.round(point.x);
+      const y = Math.round(point.y);
+
+      try {
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        const rgba = `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3] / 255})`;
+        setColor(rgba);
+        setTool('pen');
+      } catch (err) {
+        console.warn('Color picker error:', err);
+      }
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement | MouseEvent>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const point = {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+    setHoverPos(point);
+
+    if (tool === 'crop') return useCrop.continueCrop(point);
+
+    if (tool === 'move' && useTransform.isMoving?.current)
+      return useTransform.continueMove(point, setTempCanvasOffset, position, scale);
+
+    if (tool === 'pen' || tool === 'eraser') {
+      if (activeLayer) useDrawing.continueDrawing(point);
+      setHoverPos(point);
+      return;
+    }
+
+    if (tool === 'lasso') {
+      const logicalPos = toLogicalPos(point, flip, canvasParentSize);
+      useLasso.handleMouseMove(logicalPos);
+      return;
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (tool === 'crop') return useCrop.endCrop();
+    if (tool === 'pen' || tool === 'eraser') return useDrawing.endDrawing();
+    if (tool === 'move') return useTransform.endMove();
+    if (tool === 'lasso') return useLasso.handleMouseUp();
+  };
+
+  // Points events
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = getPoint(e.nativeEvent);
+    if (!point) return;
+
+    if (tool === 'crop') return useCrop.startCrop(point);
+    if (tool === 'move') return useTransform.startMove(point);
+    if (tool === 'pen' || tool === 'eraser') {
+      if (activeLayer) useDrawing.startDrawing(point, e.pressure || 1);
+      return;
+    }
+
+    if (tool === 'lasso') return useLasso.handleMouseDown(point);
+    if (tool === 'fill') {
+      fillAtPoint(point, color, useLasso.lassoPoints);
+      commit();
+      return;
+    }
+
+    if (tool === 'colorize') {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (!ctx) return;
+      const x = Math.round(point.x);
+      const y = Math.round(point.y);
       try {
         const pixel = ctx.getImageData(x, y, 1, 1).data;
         const rgba = `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, ${pixel[3] / 255})`;
@@ -88,53 +154,64 @@ export const useCanvasHandlers = ({
     }
   };
 
-  const handleMouseMove = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-    // Всегда вычисляем visualPos через client (единая система)
-    const client = getClientCoordinates(e.evt);
-    const visualPos = getStagePosFromClient(client, parentContainerRef, scale, position);
-    if (!visualPos) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const point = getPoint(e.nativeEvent);
+    if (!point) return;
+    setHoverPos(point);
 
-    // Передаем ВИЗУАЛЬНЫЕ координаты для инверсии/курсорного рендера
-    setHoverPos(visualPos);
-
-    if (tool === 'crop') {
-      useCrop.continueCrop(visualPos);
-      return;
-    }
-
-    if (tool === 'move') {
-      // useTransform ожидает продолжение перемещения — передаем visualPos
-      if (useTransform.isMoving?.current) {
-        useTransform.continueMove(visualPos, setTempCanvasOffset, position, scale);
-      }
-      return;
-    }
+    if (tool === 'crop') return useCrop.continueCrop(point);
+    if (tool === 'move' && useTransform.isMoving?.current)
+      return useTransform.continueMove(point, setTempCanvasOffset, position, scale);
 
     if (tool === 'pen' || tool === 'eraser') {
-      const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
-      useDrawing.continueDrawing(logicalPos, activeLayer);
+      if (activeLayer) useDrawing.continueDrawing(point, e.pressure || 1);
       return;
     }
 
     if (tool === 'lasso') {
-      const logicalPos = toLogicalPos(visualPos, flip, canvasParentSize);
+      const logicalPos = toLogicalPos(point, flip, canvasParentSize);
       useLasso.handleMouseMove(logicalPos);
       return;
     }
   };
 
-  const handleMouseUp = () => {
-    if (tool === 'crop') {
-      useCrop.endCrop();
-      return;
-    }
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (tool === 'crop') return useCrop.endCrop();
     if (tool === 'pen' || tool === 'eraser') return useDrawing.endDrawing();
-    if (tool === 'move') {
-      useTransform.endMove();
-      return;
-    }
+    if (tool === 'move') return useTransform.endMove();
     if (tool === 'lasso') return useLasso.handleMouseUp();
   };
 
-  return { handleMouseDown, handleMouseMove, handleMouseUp };
+  //Touch event
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const point = getPoint(e.nativeEvent);
+    if (!point) return;
+    if (tool === 'pen' && activeLayer) useDrawing.startDrawing(point, 1);
+    if (tool === 'crop') useCrop.startCrop(point);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const point = getPoint(e.nativeEvent);
+    if (!point) return;
+    setHoverPos(point);
+    if (tool === 'pen' && activeLayer) useDrawing.continueDrawing(point, 1);
+    if (tool === 'crop') useCrop.continueCrop(point);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (tool === 'pen') useDrawing.endDrawing();
+    if (tool === 'crop') useCrop.endCrop();
+  };
+
+  return {
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
+  };
 };

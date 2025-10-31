@@ -45,7 +45,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "prepare": "husky"
+    "prepare": "husky",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "parser": "@typescript-eslint/parser",
@@ -85,6 +87,8 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4"
-  }
+    "eslint-plugin-prettier": "^5.5.4",
+    "gh-pages": "^6.3.0"
+  },
+  "homepage": "https://BoikoAnastasia.github.io/art"
 }

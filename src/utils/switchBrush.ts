@@ -4,14 +4,7 @@ import { calligraphyBrush } from '../brush/calligraphyBrush';
 import { defaultBrush } from '../brush/defaultBrush';
 import { dripBrush } from '../brush/dripBrush';
 import { foamBrush } from '../brush/foamBrush';
-
-export interface BrushProps {
-  start: any;
-  end: any;
-  color: string;
-  size: number;
-  state?: any;
-}
+import { BrushProps } from '../types/share';
 
 export const SwitchBrush = (brush: string): ((ctx: CanvasRenderingContext2D, props: BrushProps) => any) => {
   switch (brush) {
