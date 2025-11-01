@@ -1,9 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { SwitchBrush } from '../utils/switchBrush';
 
 export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoints, canvasRef }: any) => {
-  const lastRef = useRef({ layersLength: 0 });
-
   useEffect(() => {
     const canvas = canvasRef?.current;
     if (!canvas) return;
@@ -26,16 +24,17 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
     layers.forEach((layer: any) => {
       // filledShapes
       (layer.filledShapes || []).forEach((shape: any) => {
-        const pts = shape.points || [];
-        ctx.fillStyle = shape.fill || '#000';
-        if (shape.closed && pts.length >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(pts[0], pts[1]);
-          for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
-          ctx.closePath();
-          ctx.fill();
+        if (shape.isBitmap && shape.fill) {
+          const img = new Image();
+          img.src = shape.fill;
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0);
+          };
         } else {
-          ctx.fillRect(0, 0, parent.width, parent.height);
+          ctx.fillStyle = shape.color || '#000';
+          ctx.beginPath();
+          ctx.arc(shape.x, shape.y, 3, 0, Math.PI * 2);
+          ctx.fill();
         }
       });
 

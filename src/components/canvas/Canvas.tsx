@@ -55,16 +55,18 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const activeLayer = layers.find((l) => l.id === activeLayerId);
 
   // tools
-  const { fillAtPoint } = useFill();
+
   const lasso = useLasso(tool);
+  const { fillAtPoint } = useFill();
   // hooks
   const useCrop = useCropHook(canvasParentSize);
 
   //TODO
-  // OPACITY, lasso, fill, brush, layers, reverse (flip), history, turn
+  // lasso, fill, brush, layers, history, turn
   // hand mobile
   // mobile adaptive
   //lasso cursor, fill cursor
+  //выяснить почему при изменении хоста меняются кисти
 
   useCanvasZoom({ scale, position, setScale, setPosition, parentContainerRef });
   const { handleContainerMouseDown } = useCanvasDrag({
