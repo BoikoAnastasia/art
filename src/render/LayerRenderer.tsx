@@ -8,39 +8,57 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Очистка всего канваса перед отрисовкой всех слоёв
+    // Очистка канваса
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
 
-    // общий трансформ (offset + flip). Все слои рисуем в одной системе координат.
+    // Общий трансформ для offset и flip
     ctx.translate(
       tempCanvasOffset.x + (flip.flipX ? parent.width : 0),
       tempCanvasOffset.y + (flip.flipY ? parent.height : 0)
     );
     ctx.scale(flip.flipX ? -1 : 1, flip.flipY ? -1 : 1);
 
-    // Рисуем каждый слой по очереди
+    // Проходим по слоям
     layers.forEach((layer: any) => {
-      // filledShapes
+      // --- filledShapes ---
       (layer.filledShapes || []).forEach((shape: any) => {
         if (shape.isBitmap && shape.fill) {
           const img = new Image();
           img.src = shape.fill;
-          img.onload = () => {
-            ctx.drawImage(img, 0, 0);
+
+          const draw = () => {
+            // ✅ Рисуем по абсолютным координатам, трансформация уже применена в ctx.translate
+            ctx.drawImage(
+              img,
+              shape.x || 0, // ✅ Только абсолютная позиция
+              shape.y || 0,
+              shape.width,
+              shape.height
+            );
           };
-        } else {
+
+          if (img.complete) draw();
+          else img.onload = draw;
+        } else if (shape.points) {
           ctx.fillStyle = shape.color || '#000';
           ctx.beginPath();
-          ctx.arc(shape.x, shape.y, 3, 0, Math.PI * 2);
+          shape.points.forEach((p: any, i: number) => {
+            // ✅ Только абсолютные координаты
+            const x = p.x;
+            const y = p.y;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
           ctx.fill();
         }
       });
 
-      // lines
+      // --- lines --- (остается без изменений)
       (layer.lines || []).forEach((line: any) => {
         if (!line.points || line.points.length < 2) return;
+
         const points = line.points;
 
         ctx.save();
@@ -61,16 +79,25 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
 
         if (!line.brush || line.brush === 'default') {
           ctx.beginPath();
-          ctx.moveTo(points[0].x, points[0].y);
-          for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+          // ✅ Только абсолютные координаты + offset линии если есть
+          ctx.moveTo(points[0].x + (line.offsetX || 0), points[0].y + (line.offsetY || 0));
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x + (line.offsetX || 0), points[i].y + (line.offsetY || 0));
+          }
           ctx.stroke();
         } else {
           const brushFunc = SwitchBrush(line.brush);
           let brushState = {};
           for (let i = 1; i < points.length; i++) {
             brushState = brushFunc(ctx, {
-              start: points[i - 1],
-              end: points[i],
+              start: {
+                x: points[i - 1].x + (line.offsetX || 0),
+                y: points[i - 1].y + (line.offsetY || 0),
+              },
+              end: {
+                x: points[i].x + (line.offsetX || 0),
+                y: points[i].y + (line.offsetY || 0),
+              },
               color: line.color,
               size: line.size,
               opacity: line.opacity,
@@ -82,7 +109,7 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
       });
     });
 
-    // Лассо рисуем поверх всех слоев (в визуальной системе, поэтому оно тут же после слоёв)
+    // --- Лассо --- (остается без изменений)
     if (lassoPoints?.length > 0) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';
