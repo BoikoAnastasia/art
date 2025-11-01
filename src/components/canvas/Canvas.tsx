@@ -61,7 +61,10 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const useCrop = useCropHook(canvasParentSize);
 
   //TODO
-  // crop, lasso, fill, brush, layers, reverse (flip), history
+  // OPACITY, lasso, fill, brush, layers, reverse (flip), history, turn
+  // hand mobile
+  // mobile adaptive
+  //lasso cursor, fill cursor
 
   useCanvasZoom({ scale, position, setScale, setPosition, parentContainerRef });
   const { handleContainerMouseDown } = useCanvasDrag({

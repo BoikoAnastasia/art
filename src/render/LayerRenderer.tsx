@@ -44,18 +44,21 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
         if (!line.points || line.points.length < 2) return;
         const points = line.points;
 
+        ctx.save();
+
         if (line.tool === 'eraser') {
           ctx.globalCompositeOperation = 'destination-out';
           ctx.strokeStyle = '#FFFFFF';
+          ctx.globalAlpha = 1;
         } else {
           ctx.globalCompositeOperation = 'source-over';
           ctx.strokeStyle = line.color || '#000';
+          ctx.globalAlpha = line.opacity ?? 1;
         }
 
         ctx.lineWidth = line.size || 1;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.globalAlpha = line.opacity ?? 1;
 
         if (!line.brush || line.brush === 'default') {
           ctx.beginPath();
@@ -76,7 +79,7 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
             });
           }
         }
-        ctx.globalAlpha = 1;
+        ctx.restore();
       });
     });
 

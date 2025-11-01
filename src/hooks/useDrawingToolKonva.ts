@@ -31,19 +31,21 @@ const drawLine = (
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
+  const currentBrushState = brushState;
+
   for (let i = 1; i < points.length; i++) {
     brushState = brushFunc(ctx, {
       start: points[i - 1],
       end: points[i],
       color,
       size,
-      state: brushState,
+      state: currentBrushState,
       opacity,
     });
   }
 
   ctx.restore();
-  return brushState;
+  return currentBrushState;
 };
 
 export const useDrawingToolKonva = ({
@@ -74,10 +76,10 @@ export const useDrawingToolKonva = ({
       tool,
       brush,
       size,
-      color,
+      color: tool === 'eraser' ? '#FFFFFF' : color,
+      opacity: tool === 'eraser' ? 1 : opacity / 100,
       points: [pos],
       brushState: {},
-      opacity,
     };
     activeLayer.lines.push(stroke);
 
