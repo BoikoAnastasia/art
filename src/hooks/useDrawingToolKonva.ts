@@ -1,6 +1,20 @@
 import { useRef } from 'react';
 import { UseDrawingToolType, Point } from '../types/share';
 import { SwitchBrush } from '../utils/switchBrush';
+
+const interpolatePoints = (a: any, b: any, steps = 3) => {
+  const pts = [];
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    pts.push({
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+      pressure: a.pressure + (b.pressure - a.pressure) * t,
+    });
+  }
+  return pts;
+};
+
 const drawLine = (
   ctx: CanvasRenderingContext2D,
   points: Point[],
@@ -34,22 +48,26 @@ const drawLine = (
   const currentBrushState = brushState;
 
   for (let i = 1; i < points.length; i++) {
-    const p = points[i];
-    const startPressure = points[i - 1].pressure ?? 1;
-    const endPressure = p.pressure ?? 1;
+    const segmentPoints = [points[i - 1], ...interpolatePoints(points[i - 1], points[i], 2), points[i]];
+    for (let j = 1; j < segmentPoints.length; j++) {
+      const a = segmentPoints[j - 1];
+      const b = segmentPoints[j];
+      const startPressure = Math.max(0.05, a.pressure ?? 1);
+      const endPressure = Math.max(0.05, b.pressure ?? 1);
+      const smoothed = startPressure * 0.7 + endPressure * 0.3;
+      const curve = Math.pow(smoothed, 1.5);
+      const adjustedSize = size * curve;
 
-    const adjustedSize = size * ((startPressure + endPressure) / 2); // усредняем давление между точками
-
-    brushState = brushFunc(ctx, {
-      start: points[i - 1],
-      end: p,
-      color,
-      size: adjustedSize,
-      state: currentBrushState,
-      opacity,
-    });
+      brushState = brushFunc(ctx, {
+        start: a,
+        end: b,
+        color,
+        size: adjustedSize,
+        state: brushState,
+        opacity,
+      });
+    }
   }
-
   ctx.restore();
   return currentBrushState;
 };
@@ -84,7 +102,7 @@ export const useDrawingToolKonva = ({
       size,
       color: tool === 'eraser' ? '#FFFFFF' : color,
       opacity: tool === 'eraser' ? 1 : opacity / 100,
-      points: [{ ...pos, pressure }],
+      points: [{ ...pos, pressure: pressure ?? 1 }],
       brushState: {},
     };
     activeLayer.lines.push(stroke);
@@ -113,7 +131,7 @@ export const useDrawingToolKonva = ({
     const lastStroke = activeLayer.lines[activeLayer.lines.length - 1];
     if (!lastStroke) return;
 
-    lastStroke.points.push({ ...pos, pressure });
+    lastStroke.points.push({ ...pos, pressure: pressure ?? 1 });
     lastStroke.brushState = drawLine(
       ctx,
       lastStroke.points,

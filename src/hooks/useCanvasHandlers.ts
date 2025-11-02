@@ -2,6 +2,9 @@
 import { toLogicalPos } from '../utils/position';
 // types
 import { UseCanvasHandlersType } from '../types/share';
+import { useRef } from 'react';
+
+const smoothPressure = (prev: number, next: number) => prev * 0.7 + next * 0.3;
 
 export const useCanvasHandlers = ({
   tool,
@@ -24,6 +27,7 @@ export const useCanvasHandlers = ({
   useCrop,
   canvasRef,
 }: UseCanvasHandlersType & { canvasRef: React.RefObject<HTMLCanvasElement | null> }) => {
+  const prevPressureRef = useRef(1);
   /** Получение координат для pointer и touch */
   const getPoint = (e: PointerEvent | TouchEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -125,7 +129,8 @@ export const useCanvasHandlers = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const point = getPoint(e.nativeEvent);
     if (!point) return;
-    const pressure = e.pressure ?? 1;
+    const pressure = e.pointerType === 'pen' ? smoothPressure(prevPressureRef.current, e.pressure ?? 1) : 1;
+    prevPressureRef.current = pressure;
 
     if (tool === 'crop') return useCrop.startCrop(point);
     if (tool === 'move') return useTransform.startMove(point);
@@ -159,7 +164,8 @@ export const useCanvasHandlers = ({
     const point = getPoint(e.nativeEvent);
     if (!point) return;
     setHoverPos(point);
-    const pressure = e.pressure ?? 1;
+    const pressure = e.pointerType === 'pen' ? smoothPressure(prevPressureRef.current, e.pressure ?? 1) : 1;
+    prevPressureRef.current = pressure;
 
     if (tool === 'crop') return useCrop.continueCrop(point);
     if (tool === 'move' && useTransform.isMoving?.current)
