@@ -29,14 +29,7 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
           img.src = shape.fill;
 
           const draw = () => {
-            // ✅ Рисуем по абсолютным координатам, трансформация уже применена в ctx.translate
-            ctx.drawImage(
-              img,
-              shape.x || 0, // ✅ Только абсолютная позиция
-              shape.y || 0,
-              shape.width,
-              shape.height
-            );
+            ctx.drawImage(img, shape.x || 0, shape.y || 0, shape.width, shape.height);
           };
 
           if (img.complete) draw();
@@ -45,7 +38,6 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
           ctx.fillStyle = shape.color || '#000';
           ctx.beginPath();
           shape.points.forEach((p: any, i: number) => {
-            // ✅ Только абсолютные координаты
             const x = p.x;
             const y = p.y;
             if (i === 0) ctx.moveTo(x, y);
@@ -54,8 +46,7 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
           ctx.fill();
         }
       });
-
-      // --- lines --- (остается без изменений)
+      //lines
       (layer.lines || []).forEach((line: any) => {
         if (!line.points || line.points.length < 2) return;
 
@@ -79,7 +70,6 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
 
         if (!line.brush || line.brush === 'default') {
           ctx.beginPath();
-          // ✅ Только абсолютные координаты + offset линии если есть
           ctx.moveTo(points[0].x + (line.offsetX || 0), points[0].y + (line.offsetY || 0));
           for (let i = 1; i < points.length; i++) {
             ctx.lineTo(points[i].x + (line.offsetX || 0), points[i].y + (line.offsetY || 0));
@@ -109,7 +99,7 @@ export const LayerRenderer = ({ layers, tempCanvasOffset, flip, parent, lassoPoi
       });
     });
 
-    // --- Лассо --- (остается без изменений)
+    // Лассо
     if (lassoPoints?.length > 0) {
       ctx.save();
       ctx.globalCompositeOperation = 'source-over';

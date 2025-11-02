@@ -62,7 +62,7 @@ export const Canvas = ({ canvasParentSize, parentContainerRef }: CanvasType) => 
   const useCrop = useCropHook(canvasParentSize);
 
   //TODO
-  // lasso, fill, brush, layers, history, turn
+  // lasso, brush, layers, history, turn
   // hand mobile
   // mobile adaptive
   //lasso cursor, fill cursor

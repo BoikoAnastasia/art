@@ -125,11 +125,12 @@ export const useCanvasHandlers = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const point = getPoint(e.nativeEvent);
     if (!point) return;
+    const pressure = e.pressure ?? 1;
 
     if (tool === 'crop') return useCrop.startCrop(point);
     if (tool === 'move') return useTransform.startMove(point);
     if (tool === 'pen' || tool === 'eraser') {
-      if (activeLayer) useDrawing.startDrawing(point, e.pressure || 1);
+      if (activeLayer) useDrawing.startDrawing(point, pressure);
       return;
     }
 
@@ -158,13 +159,14 @@ export const useCanvasHandlers = ({
     const point = getPoint(e.nativeEvent);
     if (!point) return;
     setHoverPos(point);
+    const pressure = e.pressure ?? 1;
 
     if (tool === 'crop') return useCrop.continueCrop(point);
     if (tool === 'move' && useTransform.isMoving?.current)
       return useTransform.continueMove(point, setTempCanvasOffset, position, scale);
 
     if (tool === 'pen' || tool === 'eraser') {
-      if (activeLayer) useDrawing.continueDrawing(point, e.pressure || 1);
+      if (activeLayer) useDrawing.continueDrawing(point, pressure);
       return;
     }
 

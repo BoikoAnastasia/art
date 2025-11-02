@@ -20,7 +20,7 @@ export const CursorRender = ({ hoverPos, size = 10, tool, color }: CursorRenderT
 
     ctx.beginPath();
     ctx.arc(hoverPos.x, hoverPos.y, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = tool === 'pen' || tool === 'colorize' ? color : 'transparent';
+    ctx.strokeStyle = tool === 'move' || tool === 'hand' || tool === 'crop' ? 'transparent' : '#000';
     ctx.lineWidth = 1;
     ctx.stroke();
   }, [hoverPos, size, tool, color]);

@@ -173,7 +173,7 @@ export type CanvasType = {
 };
 
 // Brush
-export type Point = { x: number; y: number };
+export type Point = { x: number; y: number; pressure?: number };
 
 export type CalligraphyBrushState = {
   lastTime?: number;

@@ -34,11 +34,17 @@ const drawLine = (
   const currentBrushState = brushState;
 
   for (let i = 1; i < points.length; i++) {
+    const p = points[i];
+    const startPressure = points[i - 1].pressure ?? 1;
+    const endPressure = p.pressure ?? 1;
+
+    const adjustedSize = size * ((startPressure + endPressure) / 2); // усредняем давление между точками
+
     brushState = brushFunc(ctx, {
       start: points[i - 1],
-      end: points[i],
+      end: p,
       color,
-      size,
+      size: adjustedSize,
       state: currentBrushState,
       opacity,
     });
@@ -64,7 +70,7 @@ export const useDrawingToolKonva = ({
 
   const getCtx = (): CanvasRenderingContext2D | null => canvasRef.current?.getContext('2d') ?? null;
 
-  const startDrawing = (pos: Point) => {
+  const startDrawing = (pos: Point, pressure: number) => {
     const ctx = getCtx();
     if (!ctx) return;
     isDrawing.current = true;
@@ -78,7 +84,7 @@ export const useDrawingToolKonva = ({
       size,
       color: tool === 'eraser' ? '#FFFFFF' : color,
       opacity: tool === 'eraser' ? 1 : opacity / 100,
-      points: [pos],
+      points: [{ ...pos, pressure }],
       brushState: {},
     };
     activeLayer.lines.push(stroke);
@@ -96,7 +102,7 @@ export const useDrawingToolKonva = ({
     );
   };
 
-  const continueDrawing = (pos: Point) => {
+  const continueDrawing = (pos: Point, pressure: number) => {
     if (!isDrawing.current) return;
     const ctx = getCtx();
     if (!ctx) return;
@@ -107,7 +113,7 @@ export const useDrawingToolKonva = ({
     const lastStroke = activeLayer.lines[activeLayer.lines.length - 1];
     if (!lastStroke) return;
 
-    lastStroke.points.push(pos);
+    lastStroke.points.push({ ...pos, pressure });
     lastStroke.brushState = drawLine(
       ctx,
       lastStroke.points,
